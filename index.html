@@ -1,116 +1,161 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Générateur de Menus</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6750A4">
-
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Menu Generator">
+  <meta name="description" content="Générateur de menus hebdomadaires avec synchronisation en temps réel">
+  <title>Générateur de Menus</title>
+  
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <div>
-        <div class="title">Générateur de Menus</div>
-        <div class="subtitle">Planifiez vos repas en équipe</div>
+    <!-- Install Prompt -->
+    <div id="installPrompt" class="install-prompt hidden">
+      <div class="install-text">
+        <div class="install-title">📱 Installer l'application</div>
+        <div class="install-subtitle">Ajoutez-la à votre écran d'accueil</div>
       </div>
+      <button class="btn btn-filled-tonal" onclick="installApp()">Installer</button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="title">Générateur de Menus</div>
+      <div class="subtitle">Planifiez vos repas en équipe</div>
       <div id="syncBadge" class="sync-badge hidden">
-        <span class="material-icons">sync</span>
+        <span class="material-icons" style="color: var(--md-success);">sync</span>
         <div>
           <div class="sync-text" id="syncStatus">Synchronisé</div>
           <div id="groupIdDisplay" class="group-id-text"></div>
         </div>
       </div>
-    </header>
-
-    <!-- Group setup -->
-    <section id="groupSetup" class="card center-column">
-  <div class="card-title"><span class="material-icons">group</span> Configuration du groupe</div>
-  <p class="info-text">Créez un nouveau groupe ou rejoignez un groupe existant pour synchroniser vos données.</p>
-
-  <!-- Boutons alignés -->
-  <div class="button-row">
-    <button id="createGroupBtn" class="btn btn-filled" onclick="createGroup()">Créer un groupe</button>
-    <button id="joinGroupBtn" class="btn btn-filled-tonal" onclick="toggleJoinBox()">Rejoindre un groupe</button>
-  </div>
-
-  <!-- Champ d’entrée masqué par défaut -->
-  <div id="joinGroupBox" class="join-box hidden">
-    <input id="groupIdInput" class="input" placeholder="ID du groupe (ex: group_1234)" />
-    <div class="button-row small">
-      <button class="btn btn-filled" onclick="joinGroupConfirm()">Valider</button>
-      <button class="btn btn-text" onclick="toggleJoinBox(false)">Annuler</button>
     </div>
-  </div>
-</section>
 
-    <!-- Main application -->
-    <main id="mainApp" class="hidden">
-      <div class="top-controls">
-        <div class="button-grid" style="flex:1">
-          <button class="btn btn-filled-tonal" onclick="openModal('configModal')">
-            <span class="material-icons">settings</span>
-            Config
-          </button>
-          <button class="btn btn-filled" onclick="generateMenu()">
-            <span class="material-icons">refresh</span>
-            Générer
-          </button>
-          <button class="btn btn-outlined" onclick="openModal('addRecipeModal')">
-            <span class="material-icons">add</span>
-            Ajouter une recette
-          </button>
-        </div>
-
-        <button class="btn btn-text" onclick="openModal('groupModal')" style="align-self:flex-start">
-          <span class="material-icons">settings</span> Paramètres du groupe
+    <!-- Group Setup -->
+    <div id="groupSetup" class="card">
+      <div class="card-title">
+        <span class="material-icons">group</span>
+        Configuration du groupe
+      </div>
+      
+      <div id="groupTypeSelection">
+        <div class="info-text">Que souhaitez-vous faire ?</div>
+        <button class="btn btn-filled" onclick="showCreateGroup()" style="width: 100%; margin-bottom: 12px;">
+          <span class="material-icons">add_circle</span>
+          Créer un nouveau groupe
+        </button>
+        <button class="btn btn-outlined" onclick="showJoinGroup()" style="width: 100%;">
+          <span class="material-icons">login</span>
+          Rejoindre un groupe existant
         </button>
       </div>
 
-      <!-- Recipes list -->
-      <section id="recipesList" class="card">
-        <div class="card-title">
-          <span class="material-icons">restaurant_menu</span> Mes recettes
+      <div id="joinGroupForm" class="hidden">
+        <div class="info-text">Entrez l'ID du groupe que vous avez reçu</div>
+        <input type="text" id="groupIdInput" class="input" placeholder="Collez l'ID du groupe ici">
+        <div style="display: flex; gap: 12px;">
+          <button class="btn btn-text" onclick="showGroupTypeSelection()" style="flex: 1;">Retour</button>
+          <button class="btn btn-filled" onclick="joinGroup()" style="flex: 1;">Rejoindre</button>
         </div>
-        <div id="recipesContainer" class="list-container">
-          <!-- rempli dynamiquement -->
-        </div>
-      </section>
+      </div>
+    </div>
 
-      <!-- Menus -->
-      <section id="menusList" class="card">
-        <div class="card-title">
-          <span class="material-icons">calendar_today</span> Menus
-        </div>
-        <div id="menusContainer" class="list-container"></div>
-      </section>
-    </main>
-  </div>
-
-  <!-- Modale: Configuration -->
-  <div id="configModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="configTitle">
-    <div class="modal-content">
-      <div class="modal-title" id="configTitle">Configuration</div>
-
-      <label class="label">Jours de sport (multi-sélection)</label>
-      <div id="sportDaysChips" class="chip-container"></div>
-
-      <label class="label">Durée déjeuner (sélection unique)</label>
-      <div class="chip-container">
-        <div class="chip single" id="lunch1" onclick="setMealDuration('lunch',1)">1 jour</div>
-        <div class="chip single" id="lunch2" onclick="setMealDuration('lunch',2)">2 jours</div>
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+      <!-- Action Buttons -->
+      <div class="button-grid">
+        <button class="btn btn-filled-tonal" onclick="openModal('addDishModal')">
+          <span class="material-icons">add</span>
+          Ajouter
+        </button>
+        <button class="btn btn-outlined" onclick="openModal('configModal')">
+          <span class="material-icons">settings</span>
+          Config
+        </button>
+        <button class="btn btn-filled" onclick="generateMenu()">
+          <span class="material-icons">refresh</span>
+          Générer
+        </button>
       </div>
 
-      <label class="label">Durée dîner (sélection unique)</label>
+      <!-- Group Settings Button -->
+      <button class="btn btn-text" onclick="openModal('groupModal')" style="width: 100%; margin-bottom: 16px;">
+        <span class="material-icons">settings</span>
+        Paramètres du groupe
+      </button>
+
+      <!-- Dishes List -->
+      <div id="dishesList" class="card hidden">
+        <div class="card-title">
+          <span class="material-icons">restaurant_menu</span>
+          Mes plats (<span id="dishCount">0</span>)
+        </div>
+        <div id="dishesContainer"></div>
+      </div>
+
+      <!-- Menus List -->
+      <div id="menusList"></div>
+    </div>
+  </div>
+
+  <!-- Add Dish Modal -->
+  <div id="addDishModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">Nouveau plat</div>
+      <input type="text" id="dishName" class="input" placeholder="Nom du plat">
+      
+      <label class="label">Saisons</label>
+      <div class="chip-container" id="seasonsChips"></div>
+
+      <div class="checkbox-container">
+        <label class="checkbox">
+          <input type="checkbox" id="sportDay">
+          <span>Jour de sport</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="vegetarian">
+          <span>Végétarien</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="grillades">
+          <span>Grillades</span>
+        </label>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-text" onclick="closeModal('addDishModal')">Annuler</button>
+        <button class="btn btn-filled" onclick="addDish()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config Modal -->
+  <div id="configModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">Configuration</div>
+      
+      <label class="label">Jours de sport</label>
+      <div class="chip-container" id="sportDaysChips"></div>
+
+      <label class="label">Durée déjeuner</label>
       <div class="chip-container">
-        <div class="chip single" id="dinner1" onclick="setMealDuration('dinner',1)">1 jour</div>
-        <div class="chip single" id="dinner2" onclick="setMealDuration('dinner',2)">2 jours</div>
+        <div class="chip" onclick="setMealDuration('lunch', 1)" id="lunch1">1 jour</div>
+        <div class="chip" onclick="setMealDuration('lunch', 2)" id="lunch2">2 jours</div>
+      </div>
+
+      <label class="label">Durée dîner</label>
+      <div class="chip-container">
+        <div class="chip" onclick="setMealDuration('dinner', 1)" id="dinner1">1 jour</div>
+        <div class="chip" onclick="setMealDuration('dinner', 2)" id="dinner2">2 jours</div>
       </div>
 
       <div class="modal-buttons">
@@ -119,37 +164,20 @@
     </div>
   </div>
 
-  <!-- Modale: Add recipe -->
-  <div id="addRecipeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="addRecipeTitle">
-    <div class="modal-content">
-      <div class="modal-title" id="addRecipeTitle">Ajouter une recette</div>
-
-      <input id="recipeName" class="input" placeholder="Nom du plat" />
-      <label class="label">Saisons</label>
-      <div id="seasonsChips" class="chip-container"></div>
-
-      <div class="checkboxes">
-        <label class="checkbox"><input type="checkbox" id="recipeSportDay"> Jour de sport</label>
-        <label class="checkbox"><input type="checkbox" id="recipeVegetarian"> Végétarien</label>
-        <label class="checkbox"><input type="checkbox" id="recipeGrill"> Grillades</label>
-      </div>
-
-      <div class="modal-buttons">
-        <button class="btn btn-text" onclick="closeModal('addRecipeModal')">Annuler</button>
-        <button class="btn btn-filled" onclick="addRecipe()">Ajouter</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modale: Group -->
-  <div id="groupModal" class="modal" role="dialog" aria-modal="true">
+  <!-- Group Modal -->
+  <div id="groupModal" class="modal">
     <div class="modal-content">
       <div class="modal-title">Paramètres du groupe</div>
+      
       <label class="label">ID du groupe</label>
       <div class="group-id-display" id="currentGroupId"></div>
+      <div class="info-text">
+        Partagez cet ID avec d'autres personnes pour qu'ils rejoignent votre groupe et synchronisent leurs données.
+      </div>
+
       <div class="modal-buttons">
+        <button class="btn btn-text" onclick="closeModal('groupModal')">Fermer</button>
         <button class="btn btn-error" onclick="leaveGroup()">Quitter le groupe</button>
-        <button class="btn btn-filled" onclick="closeModal('groupModal')">Fermer</button>
       </div>
     </div>
   </div>
@@ -157,6 +185,7 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script src="./app.js"></script>
+
+  <script src="./script.js"></script>
 </body>
 </html>
