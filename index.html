@@ -31,23 +31,24 @@
 
     <!-- Group setup -->
     <section id="groupSetup" class="card center-column">
-      <div class="card-title"><span class="material-icons">group</span> Configuration du groupe</div>
-      <p class="info-text">Créez un nouveau groupe ou rejoignez un groupe existant pour synchroniser vos données.</p>
+  <div class="card-title"><span class="material-icons">group</span> Configuration du groupe</div>
+  <p class="info-text">Créez un nouveau groupe ou rejoignez un groupe existant pour synchroniser vos données.</p>
 
-      <div class="button-grid" style="margin-top:8px">
-        <button class="btn btn-filled" onclick="createGroup()">Créer un groupe</button>
-        <button class="btn btn-filled-tonal" onclick="showJoinBox()">Rejoindre un groupe</button>
-      </div>
+  <!-- Boutons alignés -->
+  <div class="button-row">
+    <button id="createGroupBtn" class="btn btn-filled" onclick="createGroup()">Créer un groupe</button>
+    <button id="joinGroupBtn" class="btn btn-filled-tonal" onclick="toggleJoinBox()">Rejoindre un groupe</button>
+  </div>
 
-      <!-- Champ d'entrée caché tant que l'utilisateur ne clique pas sur 'Rejoindre un groupe' -->
-      <div id="joinGroupBox" class="join-box hidden">
-        <input id="groupIdInput" class="input" placeholder="Entrez l'ID du groupe (ex: group_1234)" />
-        <div class="button-grid small">
-          <button class="btn btn-filled" onclick="joinGroupConfirm()">Valider</button>
-          <button class="btn btn-text" onclick="hideJoinBox()">Annuler</button>
-        </div>
-      </div>
-    </section>
+  <!-- Champ d’entrée masqué par défaut -->
+  <div id="joinGroupBox" class="join-box hidden">
+    <input id="groupIdInput" class="input" placeholder="ID du groupe (ex: group_1234)" />
+    <div class="button-row small">
+      <button class="btn btn-filled" onclick="joinGroupConfirm()">Valider</button>
+      <button class="btn btn-text" onclick="toggleJoinBox(false)">Annuler</button>
+    </div>
+  </div>
+</section>
 
     <!-- Main application -->
     <main id="mainApp" class="hidden">
