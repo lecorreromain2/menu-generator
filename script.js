@@ -1,12 +1,12 @@
 // Configuration Firebase
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_AUTH_DOMAIN",
-  databaseURL: "VOTRE_DATABASE_URL",
-  projectId: "VOTRE_PROJECT_ID",
-  storageBucket: "VOTRE_STORAGE_BUCKET",
-  messagingSenderId: "VOTRE_SENDER_ID",
-  appId: "VOTRE_APP_ID"
+  apiKey: "AIzaSyCviy5lWve4UUaSpZTz9hnSPu16e_mO_2U",
+  authDomain: "menu-generator-7c7bf.firebaseapp.com",
+  databaseURL: "https://menu-generator-7c7bf-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "menu-generator-7c7bf",
+  storageBucket: "menu-generator-7c7bf.firebasestorage.app",
+  messagingSenderId: "760559115603",
+  appId: "1:760559115603:web:30955099b520f65c3495a6"
 };
 
 firebase.initializeApp(firebaseConfig);
