@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#6750A4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Menu Generator">
+  <meta name="description" content="Générateur de menus hebdomadaires avec synchronisation en temps réel">
+  <title>Générateur de Menus</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --md-primary: #6750A4;
+      --md-primary-container: #EADDFF;
+      --md-on-primary: #FFFFFF;
+      --md-on-primary-container: #21005E;
+      --md-secondary: #625B71;
+      --md-secondary-container: #E8DEF8;
+      --md-on-secondary-container: #1E192B;
+      --md-surface: #FFFBFE;
+      --md-surface-variant: #E7E0EC;
+      --md-on-surface: #1C1B1F;
+      --md-on-surface-variant: #49454F;
+      --md-outline: #79747E;
+      --md-success: #146C2E;
+      --md-success-container: #B7F4B9;
+      --md-error: #BA1A1A;
+      --md-error-container: #FFDAD6;
+      --md-background: #F5F5F5;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--md-background);
+      min-height: 100vh;
+      padding: 16px;
+      color: var(--md-on-surface);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: var(--md-surface);
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--md-primary);
+      margin-bottom: 4px;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--md-on-surface-variant);
+      font-size: 14px;
+      font-weight: 400;
+    }
+
+    .sync-badge {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--md-success-container);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sync-text {
+      color: var(--md-success);
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .group-id-text {
+      font-size: 12px;
+      color: var(--md-on-surface-variant);
+      margin-top: 4px;
+    }
+
+    /* Buttons */
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: 'Roboto', sans-serif;
+      letter-spacing: 0.1px;
+    }
+
+    .btn:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-filled {
+      background: var(--md-primary);
+      color: var(--md-on-primary);
+    }
+
+    .btn-filled-tonal {
+      background: var(--md-secondary-container);
+      color: var(--md-on-secondary-container);
+    }
+
+    .btn-outlined {
+      background: transparent;
+      border: 1px solid var(--md-outline);
+      color: var(--md-primary);
+    }
+
+    .btn-text {
+      background: transparent;
+      box-shadow: none;
+      color: var(--md-primary);
+    }
+
+    .btn-success {
+      background: var(--md-success);
+      color: white;
+    }
+
+    .btn-error {
+      background: var(--md-error);
+      color: white;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--md-surface);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--md-on-surface);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Dish Items */
+    .dish-item {
+      background: var(--md-surface-variant);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dish-name {
+      font-weight: 500;
+      color: var(--md-on-surface);
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .tag {
+      background: var(--md-primary-container);
+      color: var(--md-on-primary-container);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .tag-blue {
+      background: #D3E3FD;
+      color: #001C38;
+    }
+
+    .tag-green {
+      background: var(--md-success-container);
+      color: var(--md-success);
+    }
+
+    .tag-orange {
+      background: #FFDCC8;
+      color: #5C1900;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      color: var(--md-error);
+      font-size: 20px;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .delete-btn:hover {
+      background: var(--md-error-container);
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--md-surface);
+      border-radius: 28px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--md-on-surface);
+      margin-bottom: 20px;
+    }
+
+    /* Input */
+    .input {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid var(--md-outline);
+      border-radius: 4px;
+      font-size: 16px;
+      margin-bottom: 16px;
+      background: var(--md-surface);
+      color: var(--md-on-surface);
+      font-family: 'Roboto', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--md-primary);
+      border-width: 2px;
+      padding: 15px;
+    }
+
+    .label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--md-on-surface-variant);
+      margin: 16px 0 8px 0;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Chips */
+    .chip-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--md-outline);
+      background: var(--md-surface);
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--md-on-surface-variant);
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .chip:hover {
+      background: var(--md-surface-variant);
+    }
+
+    .chip.selected {
+      background: var(--md-secondary-container);
+      border-color: var(--md-secondary-container);
+      color: var(--md-on-secondary-container);
+    }
+
+    /* Checkbox */
+    .checkbox-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .checkbox {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .checkbox:hover {
+      background: var(--md-surface-variant);
+    }
+
+    .checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--md-primary);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      justify-content: flex-end;
+    }
+
+    /* Day Card */
+    .day-card {
+      background: var(--md-surface-variant);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--md-outline);
+    }
+
+    .day-name {
+      font-weight: 500;
+      color: var(--md-on-surface);
+      font-size: 16px;
+    }
+
+    .sport-badge {
+      background: #D3E3FD;
+      color: #001C38;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .meal {
+      margin-bottom: 12px;
+    }
+
+    .meal:last-child {
+      margin-bottom: 0;
+    }
+
+    .meal-label {
+      font-weight: 500;
+      color: var(--md-on-surface-variant);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .meal-name {
+      color: var(--md-on-surface);
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .info-text {
+      color: var(--md-on-surface-variant);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .group-id-display {
+      background: var(--md-surface-variant);
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 12px;
+      color: var(--md-on-surface);
+      margin-bottom: 8px;
+      word-break: break-all;
+      border: 1px solid var(--md-outline);
+    }
+
+    /* Material Icons */
+    .material-icons {
+      font-size: 20px;
+      vertical-align: middle;
+    }
+
+    /* Install Prompt */
+    .install-prompt {
+      background: var(--md-primary);
+      color: var(--md-on-primary);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .install-prompt.hidden {
+      display: none;
+    }
+
+    .install-text {
+      flex: 1;
+    }
+
+    .install-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .install-subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .title {
+        font-size: 24px;
+      }
+      
+      .button-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      body {
+        padding: 8px;
+      }
+
+      .header {
+        padding: 16px;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--md-surface-variant);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--md-outline);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--md-on-surface-variant);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Install Prompt -->
+    <div id="installPrompt" class="install-prompt hidden">
+      <div class="install-text">
+        <div class="install-title">📱 Installer l'application</div>
+        <div class="install-subtitle">Ajoutez-la à votre écran d'accueil</div>
+      </div>
+      <button class="btn btn-filled-tonal" onclick="installApp()">Installer</button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="title">Générateur de Menus</div>
+      <div class="subtitle">Planifiez vos repas en équipe</div>
+      <div id="syncBadge" class="sync-badge hidden">
+        <span class="material-icons" style="color: var(--md-success);">sync</span>
+        <div>
+          <div class="sync-text" id="syncStatus">Synchronisé</div>
+          <div id="groupIdDisplay" class="group-id-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group Setup -->
+    <div id="groupSetup" class="card">
+      <div class="card-title">
+        <span class="material-icons">group</span>
+        Configuration du groupe
+      </div>
+      <div class="info-text">
+        Créez un nouveau groupe ou rejoignez un groupe existant pour synchroniser vos données.
+      </div>
+      <input type="text" id="groupIdInput" class="input" placeholder="ID du groupe (laissez vide pour créer)">
+      <button class="btn btn-filled" onclick="setupGroup()" style="width: 100%;">
+        <span class="material-icons">login</span>
+        Créer / Rejoindre le groupe
+      </button>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+      <!-- Action Buttons -->
+      <div class="button-grid">
+        <button class="btn btn-success" onclick="loadSampleDishes()">
+          <span class="material-icons">restaurant</span>
+          Exemples
+        </button>
+        <button class="btn btn-filled-tonal" onclick="openModal('addDishModal')">
+          <span class="material-icons">add</span>
+          Ajouter
+        </button>
+        <button class="btn btn-outlined" onclick="openModal('configModal')">
+          <span class="material-icons">settings</span>
+          Config
+        </button>
+        <button class="btn btn-filled" onclick="generateMenu()">
+          <span class="material-icons">refresh</span>
+          Générer
+        </button>
+      </div>
+
+      <!-- Group Settings Button -->
+      <button class="btn btn-text" onclick="openModal('groupModal')" style="width: 100%; margin-bottom: 16px;">
+        <span class="material-icons">settings</span>
+        Paramètres du groupe
+      </button>
+
+      <!-- Dishes List -->
+      <div id="dishesList" class="card hidden">
+        <div class="card-title">
+          <span class="material-icons">restaurant_menu</span>
+          Mes plats (<span id="dishCount">0</span>)
+        </div>
+        <div id="dishesContainer"></div>
+      </div>
+
+      <!-- Menus List -->
+      <div id="menusList"></div>
+    </div>
+  </div>
+
+  <!-- Add Dish Modal -->
+  <div id="addDishModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">Nouveau plat</div>
+      <input type="text" id="dishName" class="input" placeholder="Nom du plat">
+      
+      <label class="label">Saisons</label>
+      <div class="chip-container" id="seasonsChips"></div>
+
+      <div class="checkbox-container">
+        <label class="checkbox">
+          <input type="checkbox" id="sportDay">
+          <span>Jour de sport</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="vegetarian">
+          <span>Végétarien</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="grillades">
+          <span>Grillades</span>
+        </label>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-text" onclick="closeModal('addDishModal')">Annuler</button>
+        <button class="btn btn-filled" onclick="addDish()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config Modal -->
+  <div id="configModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">Configuration</div>
+      
+      <label class="label">Jours de sport</label>
+      <div class="chip-container" id="sportDaysChips"></div>
+
+      <label class="label">Durée déjeuner</label>
+      <div class="chip-container">
+        <div class="chip" onclick="setMealDuration('lunch', 1)" id="lunch1">1 jour</div>
+        <div class="chip" onclick="setMealDuration('lunch', 2)" id="lunch2">2 jours</div>
+      </div>
+
+      <label class="label">Durée dîner</label>
+      <div class="chip-container">
+        <div class="chip" onclick="setMealDuration('dinner', 1)" id="dinner1">1 jour</div>
+        <div class="chip" onclick="setMealDuration('dinner', 2)" id="dinner2">2 jours</div>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-filled" onclick="closeModal('configModal')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group Modal -->
+  <div id="groupModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">Paramètres du groupe</div>
+      
+      <label class="label">ID du groupe</label>
+      <div class="group-id-display" id="currentGroupId"></div>
+      <div class="info-text">
+        Partagez cet ID avec d'autres personnes pour qu'ils rejoignent votre groupe et synchronisent leurs données.
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-text" onclick="closeModal('groupModal')">Fermer</button>
+        <button class="btn btn-error" onclick="leaveGroup()">Quitter le groupe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+  <script>
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCviy5lWve4UUaSpZTz9hnSPu16e_mO_2UY",
+      authDomain: "menu-generator-7c7bf.firebaseapp.com",
+      databaseURL: "https://menu-generator-7c7bf-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "menu-generator-7c7bf",
+      storageBucket: "menu-generator-7c7bf.firebasestorage.app",
+      messagingSenderId: "760559115603",
+      appId: "1:760559115603:web:30955099b520f65c3495a6"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let groupId = localStorage.getItem('groupId') || '';
+    let dishes = [];
+    let menus = [];
+    let menuConfig = { sportDays: [], mealDuration: { lunch: 1, dinner: 1 } };
+    let newDishSeasons = [];
+
+    const seasons = ['Printemps', 'Été', 'Automne', 'Hiver'];
+    const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+    const sampleDishes = [
+      { name: 'Poulet rôti aux légumes', seasons: ['Automne', 'Hiver'], sportDay: true, vegetarian: false, grillades: false },
+      { name: 'Salade César', seasons: ['Printemps', 'Été'], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Spaghetti bolognaise', seasons: [], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Curry de légumes', seasons: ['Automne', 'Hiver'], sportDay: false, vegetarian: true, grillades: false },
+      { name: 'Saumon grillé et riz', seasons: ['Printemps', 'Été'], sportDay: true, vegetarian: false, grillades: true },
+      { name: 'Quiche lorraine', seasons: [], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Chili con carne', seasons: ['Automne', 'Hiver'], sportDay: true, vegetarian: false, grillades: false },
+      { name: 'Risotto aux champignons', seasons: ['Automne'], sportDay: false, vegetarian: true, grillades: false },
+      { name: 'Brochettes de poulet', seasons: ['Printemps', 'Été'], sportDay: true, vegetarian: false, grillades: true },
+      { name: 'Lasagnes végétariennes', seasons: [], sportDay: false, vegetarian: true, grillades: false },
+      { name: 'Steak frites', seasons: [], sportDay: true, vegetarian: false, grillades: true },
+      { name: 'Soupe de potiron', seasons: ['Automne', 'Hiver'], sportDay: false, vegetarian: true, grillades: false },
+      { name: 'Tacos au bœuf', seasons: ['Été'], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Pizza maison', seasons: [], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Poulet tikka masala', seasons: [], sportDay: true, vegetarian: false, grillades: false },
+      { name: 'Salade de quinoa', seasons: ['Printemps', 'Été'], sportDay: true, vegetarian: true, grillades: false },
+      { name: 'Bœuf bourguignon', seasons: ['Automne', 'Hiver'], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Wok de légumes au tofu', seasons: [], sportDay: false, vegetarian: true, grillades: false },
+      { name: 'Côtelettes d\'agneau grillées', seasons: ['Printemps', 'Été'], sportDay: true, vegetarian: false, grillades: true },
+      { name: 'Gratin dauphinois et jambon', seasons: ['Automne', 'Hiver'], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Poke bowl au thon', seasons: ['Printemps', 'Été'], sportDay: true, vegetarian: false, grillades: false },
+      { name: 'Couscous végétarien', seasons: [], sportDay: false, vegetarian: true, grillades: false },
+      { name: 'Blanquette de veau', seasons: ['Hiver'], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Burger maison', seasons: ['Été'], sportDay: false, vegetarian: false, grillades: true },
+      { name: 'Ratatouille', seasons: ['Été', 'Automne'], sportDay: false, vegetarian: true, grillades: false },
+      { name: 'Pot-au-feu', seasons: ['Automne', 'Hiver'], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Tartare de saumon', seasons: ['Printemps', 'Été'], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Carbonara', seasons: [], sportDay: false, vegetarian: false, grillades: false },
+      { name: 'Falafels et houmous', seasons: [], sportDay: false, vegetarian: true, grillades: false },
+      { name: 'Magret de canard', seasons: ['Automne', 'Hiver'], sportDay: true, vegetarian: false, grillades: false }
+    ];
+
+    window.onload = function() {
+      initSeasonChips();
+      initSportDaysChips();
+      
+      if (groupId) {
+        showMainApp();
+        listenToFirebase();
+      } else {
+        document.getElementById('groupIdInput').value = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      }
+
+      setupPWA();
+    };
+
+    function initSeasonChips() {
+      const container = document.getElementById('seasonsChips');
+      seasons.forEach(season => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = season;
+        chip.onclick = () => toggleSeasonChip(season, chip);
+        container.appendChild(chip);
+      });
+    }
+
+    function initSportDaysChips() {
+      const container = document.getElementById('sportDaysChips');
+      daysOfWeek.forEach(day => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = day;
+        chip.id = 'sport_' + day;
+        chip.onclick = () => toggleSportDay(day);
+        container.appendChild(chip);
+      });
+    }
+
+    function toggleSeasonChip(season, chip) {
+      if (newDishSeasons.includes(season)) {
+        newDishSeasons = newDishSeasons.filter(s => s !== season);
+        chip.classList.remove('selected');
+      } else {
+        newDishSeasons.push(season);
+        chip.classList.add('selected');
+      }
+    }
+
+    function setupGroup() {
+      const input = document.getElementById('groupIdInput').value.trim();
+      if (input) {
+        groupId = input;
+        localStorage.setItem('groupId', groupId);
+        showMainApp();
+        listenToFirebase();
+        alert('✅ Groupe configuré ! La synchronisation est active.');
+      }
+    }
+
+    function showMainApp() {
+      document.getElementById('groupSetup').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      document.getElementById('syncBadge').classList.remove('hidden');
+      document.getElementById('groupIdDisplay').textContent = 'Groupe: ' + groupId.substring(0, 20) + '...';
+      document.getElementById('currentGroupId').textContent = groupId;
+    }
+
+    function listenToFirebase() {
+      database.ref(`groups/${groupId}/dishes`).on('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          const dishesArray = Object.entries(data).map(([key, value]) => ({
+            ...value,
+            id: key
+          }));
+          
+          const uniqueDishes = Object.values(
+            dishesArray.reduce((acc, dish) => {
+              if (!acc[dish.name] || acc[dish.name].id < dish.id) {
+                acc[dish.name] = dish;
+              }
+              return acc;
+            }, {})
+          );
+          
+          dishes = uniqueDishes;
+          renderDishes();
+        }
+        updateSyncStatus(false);
+      });
+
+      database.ref(`groups/${groupId}/menus`).on('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          const menusArray = Object.entries(data).map(([key, value]) => ({
+            ...value,
+            id: key
+          }));
+          
+          const uniqueMenus = Object.values(
+            menusArray.reduce((acc, menu) => {
+              if (!acc[menu.weekNumber] || acc[menu.weekNumber].id < menu.id) {
+                acc[menu.weekNumber] = menu;
+              }
+              return acc;
+            }, {})
+          );
+          
+          menus = uniqueMenus.sort((a, b) => b.weekNumber - a.weekNumber);
+          renderMenus();
+        }
+      });
+
+      database.ref(`groups/${groupId}/config`).on('value', snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          menuConfig = data;
+          updateConfigUI();
+        }
+      });
+    }
+
+    function updateSyncStatus(syncing) {
+      document.getElementById('syncStatus').textContent = syncing ? 'Synchronisation...' : 'Synchronisé';
+    }
+
+    function updateConfigUI() {
+      daysOfWeek.forEach(day => {
+        const chip = document.getElementById('sport_' + day);
+        if (chip) {
+          chip.classList.toggle('selected', menuConfig.sportDays.includes(day));
+        }
+      });
+
+      ['lunch1', 'lunch2', 'dinner1', 'dinner2'].forEach(id => {
+        document.getElementById(id).classList.remove('selected');
+      });
+      document.getElementById('lunch' + menuConfig.mealDuration.lunch).classList.add('selected');
+      document.getElementById('dinner' + menuConfig.mealDuration.dinner).classList.add('selected');
+    }
+
+    function toggleSportDay(day) {
+      if (menuConfig.sportDays.includes(day)) {
+        menuConfig.sportDays = menuConfig.sportDays.filter(d => d !== day);
+      } else {
+        menuConfig.sportDays.push(day);
+      }
+      database.ref(`groups/${groupId}/config`).set(menuConfig);
+    }
+
+    function setMealDuration(meal, duration) {
+      menuConfig.mealDuration[meal] = duration;
+      database.ref(`groups/${groupId}/config`).set(menuConfig);
+    }
+
+    function loadSampleDishes() {
+      updateSyncStatus(true);
+      sampleDishes.forEach((dish, idx) => {
+        const newDish = { ...dish, id: Date.now() + idx };
+        database.ref(`groups/${groupId}/dishes/${newDish.id}`).set(newDish);
+      });
+      alert('✅ 30 recettes chargées et synchronisées !');
+    }
+
+    function addDish() {
+      const name = document.getElementById('dishName').value.trim();
+      if (!name) {
+        alert('❌ Veuillez entrer un nom de plat');
+        return;
+      }
+
+      const dish = {
+        id: Date.now(),
+        name: name,
+        seasons: newDishSeasons,
+        sportDay: document.getElementById('sportDay').checked,
+        vegetarian: document.getElementById('vegetarian').checked,
+        grillades: document.getElementById('grillades').checked
+      };
+
+      updateSyncStatus(true);
+      database.ref(`groups/${groupId}/dishes/${dish.id}`).set(dish);
+      
+      document.getElementById('dishName').value = '';
+      newDishSeasons = [];
+      document.querySelectorAll('#seasonsChips .chip').forEach(chip => chip.classList.remove('selected'));
+      document.getElementById('sportDay').checked = false;
+      document.getElementById('vegetarian').checked = false;
+      document.getElementById('grillades').checked = false;
+      
+      closeModal('addDishModal');
+      alert('✅ Plat ajouté et synchronisé !');
+    }
+
+    function deleteDish(id) {
+      if (confirm('Voulez-vous vraiment supprimer ce plat ?')) {
+        updateSyncStatus(true);
+        database.ref(`groups/${groupId}/dishes/${id}`).remove();
+      }
+    }
+
+    function renderDishes() {
+      if (dishes.length === 0) {
+        document.getElementById('dishesList').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('dishesList').classList.remove('hidden');
+      document.getElementById('dishCount').textContent = dishes.length;
+      
+      const container = document.getElementById('dishesContainer');
+      container.innerHTML = '';
+      
+      dishes.forEach(dish => {
+        const dishEl = document.createElement('div');
+        dishEl.className = 'dish-item';
+        
+        let tagsHTML = '';
+        dish.seasons.forEach(s => {
+          tagsHTML += `<span class="tag">${s}</span>`;
+        });
+        if (dish.sportDay) tagsHTML += `<span class="tag tag-blue">Sport</span>`;
+        if (dish.vegetarian) tagsHTML += `<span class="tag tag-green">Végé</span>`;
+        if (dish.grillades) tagsHTML += `<span class="tag tag-orange">Grill</span>`;
+        
+        dishEl.innerHTML = `
+          <div>
+            <div class="dish-name">${dish.name}</div>
+            <div class="tags">${tagsHTML}</div>
+          </div>
+          <button class="delete-btn" onclick="deleteDish(${dish.id})">
+            <span class="material-icons">delete</span>
+          </button>
+        `;
+        
+        container.appendChild(dishEl);
+      });
+    }
+
+    function generateMenu() {
+      const currentSeason = getCurrentSeason();
+      const recentlyUsed = getRecentlyUsedDishes();
+      const availableDishes = dishes.filter(d => 
+        !recentlyUsed.has(d.id) && 
+        (d.seasons.length === 0 || d.seasons.includes(currentSeason))
+      );
+
+      if (availableDishes.length < 14) {
+        alert('❌ Pas assez de plats disponibles pour générer un menu complet !');
+        return;
+      }
+
+      const schedule = [];
+      const usedInMenu = new Set();
+
+      for (let i = 0; i < 7; i++) {
+        const day = daysOfWeek[i];
+        const isSportDay = menuConfig.sportDays.includes(day);
+        
+        let lunchDish = null;
+        if (menuConfig.mealDuration.lunch === 2 && i > 0 && schedule[i - 1].lunch) {
+          lunchDish = schedule[i - 1].lunch;
+        } else {
+          const filtered = availableDishes.filter(d => !usedInMenu.has(d.id));
+          if (filtered.length > 0) {
+            lunchDish = filtered[Math.floor(Math.random() * filtered.length)];
+            usedInMenu.add(lunchDish.id);
+          }
+        }
+
+        let dinnerDish = null;
+        if (menuConfig.mealDuration.dinner === 2 && i > 0 && schedule[i - 1].dinner) {
+          dinnerDish = schedule[i - 1].dinner;
+        } else {
+          const filtered = availableDishes.filter(d => !usedInMenu.has(d.id));
+          if (filtered.length > 0) {
+            dinnerDish = filtered[Math.floor(Math.random() * filtered.length)];
+            usedInMenu.add(dinnerDish.id);
+          }
+        }
+
+        schedule.push({ day, lunch: lunchDish, dinner: dinnerDish, isSportDay });
+      }
+
+      const newMenu = {
+        id: Date.now(),
+        weekNumber: getWeekNumber(new Date()),
+        date: new Date().toLocaleDateString('fr-FR'),
+        schedule
+      };
+
+      updateSyncStatus(true);
+      database.ref(`groups/${groupId}/menus/${newMenu.id}`).set(newMenu);
+      alert('✅ Menu généré et synchronisé !');
+    }
+
+    function renderMenus() {
+      const container = document.getElementById('menusList');
+      container.innerHTML = '';
+      
+      menus.forEach(menu => {
+        const menuCard = document.createElement('div');
+        menuCard.className = 'card';
+        
+        let scheduleHTML = '';
+        menu.schedule.forEach(day => {
+          scheduleHTML += `
+            <div class="day-card">
+              <div class="day-header">
+                <span class="day-name">${day.day}</span>
+                ${day.isSportDay ? '<span class="sport-badge">💪 Sport</span>' : ''}
+              </div>
+              <div class="meal">
+                <div class="meal-label">Déjeuner</div>
+                <div class="meal-name">${day.lunch?.name || 'Non défini'}</div>
+              </div>
+              <div class="meal">
+                <div class="meal-label">Dîner</div>
+                <div class="meal-name">${day.dinner?.name || 'Non défini'}</div>
+              </div>
+            </div>
+          `;
+        });
+        
+        menuCard.innerHTML = `
+          <div class="card-title">
+            <span class="material-icons">calendar_today</span>
+            Semaine ${menu.weekNumber} - ${menu.date}
+          </div>
+          ${scheduleHTML}
+        `;
+        
+        container.appendChild(menuCard);
+      });
+    }
+
+    function getWeekNumber(date) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function getCurrentSeason() {
+      const month = new Date().getMonth();
+      if (month >= 2 && month <= 4) return 'Printemps';
+      if (month >= 5 && month <= 7) return 'Été';
+      if (month >= 8 && month <= 10) return 'Automne';
+      return 'Hiver';
+    }
+
+    function getRecentlyUsedDishes() {
+      const currentWeek = getWeekNumber(new Date());
+      const recentMenus = menus.filter(m => currentWeek - m.weekNumber <= 3 && currentWeek - m.weekNumber >= 0);
+      const usedDishIds = new Set();
+      recentMenus.forEach(menu => {
+        menu.schedule.forEach(day => {
+          if (day.lunch) usedDishIds.add(day.lunch.id);
+          if (day.dinner) usedDishIds.add(day.dinner.id);
+        });
+      });
+      return usedDishIds;
+    }
+
+    function leaveGroup() {
+      if (confirm('⚠️ Voulez-vous vraiment quitter ce groupe ? Vous perdrez l\'accès aux données partagées.')) {
+        localStorage.removeItem('groupId');
+        location.reload();
+      }
+    }
+
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    let deferredPrompt;
+
+    function setupPWA() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').then(() => {
+          console.log('✅ Service Worker enregistré');
+        });
+      }
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('installPrompt').classList.remove('hidden');
+      });
+
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('✅ Application installée');
+      }
+    }
+
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('✅ Application installée');
+            document.getElementById('installPrompt').classList.add('hidden');
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
+  </script>
+</body>
+</html>
