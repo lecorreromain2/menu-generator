@@ -184,3 +184,31 @@ body{
   .button-grid{flex-direction:column}
   .header{flex-direction:column;align-items:flex-start;gap:10px}
 }
+
+/* --- Alignement des boutons création/connexion --- */
+.button-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+}
+
+.button-row .btn {
+  flex: 1;
+  text-align: center;
+  max-width: 220px;
+}
+
+.button-row.small .btn {
+  max-width: 160px;
+}
+
+/* Champ de saisie */
+.join-box {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
