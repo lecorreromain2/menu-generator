@@ -43,92 +43,56 @@ window.onload = () => {
 };
 
 // ============================
-// Groupes (création / rejoindre)
+// Gestion des groupes
 // ============================
+
 function createGroup() {
-  const id = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
-  groupId = id;
+  const newId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  groupId = newId;
   localStorage.setItem('groupId', groupId);
-  // crée le nœud minimal si nécessaire
-  database.ref(`groups/${groupId}`).set({ config: menuConfig })
-    .then(() => {
-      alert('✅ Groupe créé : ' + groupId);
-      showMainApp();
-      listenToFirebase();
-    })
-    .catch(err => {
-      console.error(err);
-      alert('Erreur lors de la création du groupe');
-    });
+
+  // Crée la structure minimale dans Firebase
+  database.ref(`groups/${groupId}`).set({
+    config: menuConfig,
+    dishes: {},
+    menus: {}
+  }).then(() => {
+    alert('✅ Nouveau groupe créé : ' + groupId);
+    showMainApp();
+    listenToFirebase();
+  }).catch(err => {
+    console.error(err);
+    alert('❌ Erreur lors de la création du groupe.');
+  });
 }
 
-function showJoinBox() {
-  document.getElementById('joinGroupBox').classList.remove('hidden');
-  document.getElementById('groupIdInput').focus();
-}
-
-function hideJoinBox() {
-  document.getElementById('joinGroupBox').classList.add('hidden');
-  document.getElementById('groupIdInput').value = '';
+function toggleJoinBox(force) {
+  const box = document.getElementById('joinGroupBox');
+  const visible = typeof force === 'boolean' ? force : box.classList.contains('hidden');
+  box.classList.toggle('hidden', !visible);
 }
 
 function joinGroupConfirm() {
   const input = document.getElementById('groupIdInput').value.trim();
-  if (!input) return alert('Entrez un identifiant de groupe.');
-  const triedId = input;
-  // vérifie si existant
-  database.ref(`groups/${triedId}`).once('value')
+  if (!input) return alert('Veuillez entrer un identifiant de groupe.');
+
+  // Vérifie si le groupe existe dans Firebase
+  database.ref(`groups/${input}`).once('value')
     .then(snapshot => {
       if (snapshot.exists()) {
-        groupId = triedId;
+        groupId = input;
         localStorage.setItem('groupId', groupId);
-        // récupère config si existante
-        const remote = snapshot.val();
-        if (remote.config) menuConfig = remote.config;
+        alert('✅ Groupe rejoint : ' + groupId);
         showMainApp();
         listenToFirebase();
       } else {
-        // propose la création si n'existe pas
-        if (confirm(`Le groupe ${triedId} n'existe pas. Voulez-vous le créer ?`)) {
-          groupId = triedId;
-          localStorage.setItem('groupId', groupId);
-          database.ref(`groups/${groupId}`).set({ config: menuConfig })
-            .then(() => {
-              showMainApp();
-              listenToFirebase();
-              alert('Groupe créé : ' + groupId);
-            }).catch(err => { console.error(err); alert('Erreur lors de la création'); });
-        }
+        alert('❌ Ce groupe n’existe pas.');
       }
     })
     .catch(err => {
       console.error(err);
-      alert('Erreur lors de la connexion à Firebase');
-    })
-    .finally(() => hideJoinBox());
-}
-
-function leaveGroup() {
-  if (!confirm("Quitter le groupe ?")) return;
-  if (prevGroupId) {
-    // detach listeners
-    database.ref(`groups/${prevGroupId}/config`).off();
-    database.ref(`groups/${prevGroupId}/dishes`).off();
-    database.ref(`groups/${prevGroupId}/menus`).off();
-    prevGroupId = null;
-  }
-  localStorage.removeItem('groupId');
-  groupId = '';
-  // reload pour revenir à l'écran de configuration proprement
-  location.reload();
-}
-
-function showMainApp() {
-  document.getElementById('groupSetup').classList.add('hidden');
-  document.getElementById('mainApp').classList.remove('hidden');
-  document.getElementById('syncBadge').classList.remove('hidden');
-  document.getElementById('groupIdDisplay').textContent = groupId;
-  document.getElementById('currentGroupId').textContent = groupId;
+      alert('Erreur de connexion à Firebase.');
+    });
 }
 
 // ============================
