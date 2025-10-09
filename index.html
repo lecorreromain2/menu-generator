@@ -961,15 +961,32 @@ button {
     }
 
     function setupGroup() {
-      const input = document.getElementById('groupIdInput').value.trim();
-      if (input) {
-        groupId = input;
-        localStorage.setItem('groupId', groupId);
-        showMainApp();
-        listenToFirebase();
-        alert('✅ Groupe configuré ! La synchronisation est active.');
+  const input = document.getElementById('groupIdInput').value.trim();
+
+  if (!input) {
+    alert('❌ Veuillez entrer un identifiant de groupe.');
+    return;
+  }
+
+  groupId = input;
+  localStorage.setItem('groupId', groupId);
+  showMainApp();
+  listenToFirebase();
+
+  // Vérifie si le groupe existe dans Firebase
+  database.ref(`groups/${groupId}`).once('value')
+    .then(snapshot => {
+      if (snapshot.exists()) {
+        alert('✅ Groupe rejoint avec succès !');
+      } else {
+        alert('⚠️ Nouveau groupe créé : ' + groupId);
       }
-    }
+    })
+    .catch(err => {
+      console.error('Erreur Firebase:', err);
+      alert('❌ Impossible de se connecter à Firebase.');
+    });
+}
 
     function showMainApp() {
       document.getElementById('groupSetup').classList.add('hidden');
