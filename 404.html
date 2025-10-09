@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirection PWA</title>
+  <script>
+    // Redirection pour PWA sur GitHub Pages
+    const path = window.location.pathname;
+    const segments = path.split('/');
+    
+    // Récupérer le nom du repository
+    let basePath = '/';
+    if (segments.length > 2 && segments[1] !== 'menu-generator') {
+      basePath = '/' + segments[1] + '/';
+    }
+    
+    // Rediriger vers index.html
+    window.location.replace(basePath + 'index.html?redirect=' + encodeURIComponent(path));
+  </script>
+</head>
+<body>
+  Redirection en cours...
+</body>
+</html>
