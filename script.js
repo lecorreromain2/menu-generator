@@ -9,8 +9,8 @@ const firebaseConfig = {
   appId: "1:760559115603:web:30955099b520f65c3495a6"
 };
 
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
 // Variables globales
 let groupId = localStorage.getItem('groupId') || '';
