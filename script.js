@@ -35,7 +35,34 @@ window.onload = function() {
     listenToFirebase();
   }
 
-  setupPWA();
+  setupPWA();// ✅ Initialise le tooltip après que le DOM est prêt
+  const syncIcon = document.getElementById('syncIcon');
+  const tooltip = document.getElementById('tooltip');
+  if (syncIcon && tooltip) {
+    function showTooltip(text, event) {
+      tooltip.textContent = text;
+      tooltip.style.left = event.pageX + 'px';
+      tooltip.style.top = event.pageY + 'px';
+      tooltip.classList.add('show');
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove('show');
+    }
+
+    syncIcon.addEventListener('mouseenter', (e) => showTooltip(`Groupe : ${groupId}`, e));
+    syncIcon.addEventListener('mouseleave', hideTooltip);
+
+    // Pour les écrans tactiles : clic long
+    let touchTimer;
+    syncIcon.addEventListener('touchstart', (e) => {
+      touchTimer = setTimeout(() => showTooltip(`Groupe : ${groupId}`, e.touches[0]), 500);
+    });
+    syncIcon.addEventListener('touchend', () => {
+      clearTimeout(touchTimer);
+      hideTooltip();
+    });
+  }
 };
 
 // ===== NOTIFICATIONS =====
