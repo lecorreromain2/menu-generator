@@ -411,13 +411,33 @@ function renderDishes() {
 function generateMenu() {
   const currentSeason = getCurrentSeason();
   const recentlyUsed = getRecentlyUsedDishes();
+
+  // Plats filtrés selon saison + non utilisés récemment
   const availableDishes = dishes.filter(d => 
     !recentlyUsed.has(d.id) && 
     (d.seasons.length === 0 || d.seasons.includes(currentSeason))
   );
 
-  if (availableDishes.length < 14) {
-    showToast('❌ Pas assez de plats disponibles !');
+  const totalDishes = dishes.length;
+  const usableDishes = availableDishes.length;
+  const requiredDishes = 14; // 7 jours × 2 repas
+
+console.table(availableDishes);
+
+  if (usableDishes < requiredDishes) {
+    // 💡 Message explicatif détaillé
+    let details = `Vous avez ${usableDishes} plat${usableDishes > 1 ? 's' : ''} utilisable${usableDishes > 1 ? 's' : ''} sur ${requiredDishes} nécessaires.`;
+    
+    if (totalDishes === 0) {
+      details += `\n\n➡️ Ajoutez vos premières recettes avant de générer un menu.`;
+    } else if (usableDishes === 0) {
+      details += `\n\n➡️ Aucun plat disponible pour la saison "${currentSeason}" ou les 3 dernières semaines.`;
+    } else {
+      details += `\n\n➡️ Certains plats ont peut-être été utilisés récemment ou ne correspondent pas à la saison "${currentSeason}".`;
+    }
+
+    showToast('❌ Pas assez de plats disponibles !\n\n' + details, 6000);
+    console.warn(details);
     return;
   }
 
