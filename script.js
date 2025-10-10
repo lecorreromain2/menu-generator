@@ -352,18 +352,23 @@ function renderDishes() {
         <div class="tags">${tagsHTML}</div>
       </div>
       <div style="display: flex; gap: 4px;">
-        <button class="icon-btn" onclick="openEditDishModal({id: ${dish.id}, name: '${dish.name}', seasons: ${JSON.stringify(dish.seasons)}, sportDay: ${dish.sportDay}, vegetarian: ${dish.vegetarian}, grillades: ${dish.grillades}})">
+        <button class="icon-btn edit-btn">
           <span class="material-icons">edit</span>
         </button>
-        <button class="icon-btn" onclick="deleteDish(${dish.id})">
+        <button class="icon-btn delete-btn">
           <span class="material-icons">delete</span>
         </button>
       </div>
     `;
     
+    // ✅ Ajout des listeners en JS (plus sûr)
+    dishEl.querySelector('.edit-btn').addEventListener('click', () => openEditDishModal(dish));
+    dishEl.querySelector('.delete-btn').addEventListener('click', () => deleteDish(dish.id));
+    
     container.appendChild(dishEl);
   });
 }
+
 
 // ===== MENU =====
 
