@@ -160,16 +160,21 @@ function leaveGroup() {
 
 // ===== ONGLETS =====
 
-function showTab(tabName) {
+function showTab(tabName, event) {
   // Masquer tous les onglets
   document.getElementById('dishesTab').classList.remove('active');
   document.getElementById('menusTab').classList.remove('active');
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   
   // Afficher l'onglet sélectionné
-  document.getElementById(tabName + 'Tab').classList.add('active');
-  event.target.classList.add('active');
-  
+  const tabEl = document.getElementById(tabName + 'Tab');
+  if (tabEl) tabEl.classList.add('active');
+
+  // ✅ Sécurité : ne pas accéder à event.target si event est undefined
+  if (event && event.target) {
+    event.target.classList.add('active');
+  }
+
   // Mettre à jour l'état des onglets
   if (tabName === 'dishes') {
     updateDishesTab();
