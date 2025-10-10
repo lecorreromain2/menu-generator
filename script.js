@@ -11,6 +11,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const database = firebase.database();
 
 // Variables globales
 let groupId = localStorage.getItem('groupId') || '';
