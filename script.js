@@ -115,10 +115,12 @@ function showMainApp() {
   document.getElementById('groupSetup').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('syncIndicator').classList.remove('hidden');
-  document.getElementById('syncBadge').classList.remove('hidden');
-  document.getElementById('groupIdDisplay').textContent = 'Groupe: ' + groupId.substring(0, 20) + '...';
-  document.getElementById('currentGroupId').textContent = groupId;
   
+  // ✅ Affiche le groupe en infobulle sur l’icône de synchronisation
+  const syncIcon = document.getElementById('syncIcon');
+  syncIcon.title = `Groupe : ${groupId}`;
+  
+  document.getElementById('currentGroupId').textContent = groupId;
   showTab('dishes');
 }
 
