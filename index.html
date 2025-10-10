@@ -29,14 +29,17 @@
 
     <!-- Header -->
     <div class="header">
-      <div class="title">Générateur de Menus</div>
-      <div class="subtitle">Planifiez vos repas en équipe</div>
-      <div id="syncBadge" class="sync-badge hidden">
-        <span class="material-icons" style="color: var(--md-success);">sync</span>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
-          <div class="sync-text" id="syncStatus">Synchronisé</div>
-          <div id="groupIdDisplay" class="group-id-text"></div>
+          <div class="title">Générateur de Menus</div>
+          <div class="subtitle">Planifiez vos repas en équipe</div>
         </div>
+        <div id="syncIndicator" class="sync-indicator hidden">
+          <span id="syncIcon" class="material-icons">check_circle</span>
+        </div>
+      </div>
+      <div id="syncBadge" class="sync-badge hidden">
+        <div id="groupIdDisplay" class="group-id-text"></div>
       </div>
     </div>
 
@@ -81,36 +84,67 @@
           <span class="material-icons">settings</span>
           Config
         </button>
-        <button class="btn btn-filled" onclick="generateMenu()">
-          <span class="material-icons">refresh</span>
-          Générer
+      </div>
+
+      <!-- Generate Button Full Width -->
+      <button class="btn btn-filled" onclick="generateMenu()" style="width: 100%; margin-bottom: 16px; padding: 20px;">
+        <span class="material-icons">refresh</span>
+        Générer un menu
+      </button>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn" onclick="showTab('dishes')">
+          <span class="material-icons">restaurant_menu</span>
+          Mes recettes
+        </button>
+        <button class="tab-btn" onclick="showTab('menus')">
+          <span class="material-icons">calendar_today</span>
+          Mes menus
+        </button>
+        <button class="btn btn-text" onclick="openModal('groupModal')" style="margin-left: auto;">
+          <span class="material-icons">settings</span>
+          Groupe
         </button>
       </div>
 
-      <!-- Group Settings Button -->
-      <button class="btn btn-text" onclick="openModal('groupModal')" style="width: 100%; margin-bottom: 16px;">
-        <span class="material-icons">settings</span>
-        Paramètres du groupe
-      </button>
-
-      <!-- Dishes List -->
-      <div id="dishesList" class="card hidden">
-        <div class="card-title">
-          <span class="material-icons">restaurant_menu</span>
-          Mes plats (<span id="dishCount">0</span>)
+      <!-- Dishes Tab -->
+      <div id="dishesTab" class="tab-content hidden">
+        <div id="dishesList" class="card hidden">
+          <div class="card-title">
+            <span class="material-icons">restaurant_menu</span>
+            Mes recettes (<span id="dishCount">0</span>)
+          </div>
+          <div id="dishesContainer"></div>
         </div>
-        <div id="dishesContainer"></div>
+        <div id="noDishes" class="empty-state">
+          <span class="material-icons" style="font-size: 48px; color: var(--md-outline);">restaurant</span>
+          <p>Aucune recette pour le moment</p>
+          <p style="font-size: 12px; color: var(--md-on-surface-variant);">Commencez par ajouter vos recettes préférées</p>
+        </div>
       </div>
 
-      <!-- Menus List -->
-      <div id="menusList"></div>
+      <!-- Menus Tab -->
+      <div id="menusTab" class="tab-content hidden">
+        <div id="menusList"></div>
+        <div id="noMenus" class="empty-state">
+          <span class="material-icons" style="font-size: 48px; color: var(--md-outline);">calendar_today</span>
+          <p>Aucun menu généré</p>
+          <p style="font-size: 12px; color: var(--md-on-surface-variant);">Générez votre premier menu pour commencer</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Add Dish Modal -->
+  <!-- Custom Toast Notification -->
+  <div id="customToast" class="custom-toast hidden">
+    <span id="toastMessage"></span>
+  </div>
+
+  <!-- Add/Edit Dish Modal -->
   <div id="addDishModal" class="modal">
     <div class="modal-content">
-      <div class="modal-title">Nouveau plat</div>
+      <div class="modal-title" id="dishModalTitle">Nouveau plat</div>
       <input type="text" id="dishName" class="input" placeholder="Nom du plat">
       
       <label class="label">Saisons</label>
@@ -133,7 +167,7 @@
 
       <div class="modal-buttons">
         <button class="btn btn-text" onclick="closeModal('addDishModal')">Annuler</button>
-        <button class="btn btn-filled" onclick="addDish()">Ajouter</button>
+        <button class="btn btn-filled" onclick="saveDish()" id="saveDishBtn">Ajouter</button>
       </div>
     </div>
   </div>
