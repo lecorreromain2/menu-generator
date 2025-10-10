@@ -572,4 +572,8 @@ function installApp() {
   }
 }
 
- 
+// Rendre les fonctions accessibles depuis le HTML
+window.showCreateGroup = showCreateGroup;
+window.showJoinGroup = showJoinGroup;
+window.joinGroup = joinGroup;
+window.showGroupTypeSelection = showGroupTypeSelection; 
