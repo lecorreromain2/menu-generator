@@ -640,3 +640,21 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--md-on-surface-variant);
 }
+
+.tooltip {
+  position: absolute;
+  background: #333;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  transform: translate(-50%, -120%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 999;
+}
+.tooltip.show {
+  opacity: 1;
+}
+
