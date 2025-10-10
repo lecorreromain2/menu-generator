@@ -40,15 +40,17 @@ window.onload = function() {
   const tooltip = document.getElementById('tooltip');
   if (syncIcon && tooltip) {
     function showTooltip(text, event) {
-      tooltip.textContent = text;
-      tooltip.style.left = event.pageX + 'px';
-      tooltip.style.top = event.pageY + 'px';
-      tooltip.classList.add('show');
-    }
+  if (!tooltip) return; // ✅ évite l'erreur si l'élément n'existe pas
+  tooltip.textContent = text;
+  tooltip.style.left = event.pageX + 'px';
+  tooltip.style.top = event.pageY + 'px';
+  tooltip.classList.add('show');
+}
 
-    function hideTooltip() {
-      tooltip.classList.remove('show');
-    }
+   function hideTooltip() {
+  if (!tooltip) return; // ✅ sécurité
+  tooltip.classList.remove('show');
+}
 
     syncIcon.addEventListener('mouseenter', (e) => showTooltip(`Groupe : ${groupId}`, e));
     syncIcon.addEventListener('mouseleave', hideTooltip);
