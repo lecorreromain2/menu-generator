@@ -692,3 +692,10 @@ syncIcon.addEventListener('touchend', () => {
   hideTooltip();
 });
 
+// === Rendre accessibles les fonctions globales depuis le HTML ===
+window.showGroupTypeSelection = showGroupTypeSelection;
+window.showCreateGroup = showCreateGroup;
+window.showJoinGroup = showJoinGroup;
+window.joinGroup = joinGroup;
+window.leaveGroup = leaveGroup;
+
