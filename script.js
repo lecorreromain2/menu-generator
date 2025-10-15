@@ -398,11 +398,11 @@ function renderDishes() {
     dishEl.className = 'dish-item';
     
     let tagsHTML = '';
-    if (Array.isArray(dish.seasons)) {
-    dish.seasons.forEach(s => {
+if (Array.isArray(dish.seasons)) {
+  dish.seasons.forEach(s => {
     tagsHTML += `<span class="tag">${s}</span>`;
-    });
-    });
+  });
+}
     if (dish.sportDay) tagsHTML += `<span class="tag tag-blue">Sport</span>`;
     if (dish.vegetarian) tagsHTML += `<span class="tag tag-green">Végé</span>`;
     if (dish.grillades) tagsHTML += `<span class="tag tag-orange">Grill</span>`;
@@ -657,12 +657,6 @@ function installApp() {
     });
   }
 }
-
-// Rendre les fonctions accessibles depuis le HTML
-window.showCreateGroup = showCreateGroup;
-window.showJoinGroup = showJoinGroup;
-window.joinGroup = joinGroup;
-window.showGroupTypeSelection = showGroupTypeSelection;
 
 const syncIcon = document.getElementById('syncIcon');
 const tooltip = document.getElementById('tooltip');
