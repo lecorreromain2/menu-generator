@@ -240,6 +240,7 @@ function listenToFirebase() {
 
     dishesRef.on('value', snapshot => {
       const data = snapshot.val();
+      console.log('📡 Données brutes reçues depuis Firebase :', data);
       if (!data) {
         console.warn('⚠️ Aucun plat trouvé dans Firebase pour', groupId);
         dishes = [];
