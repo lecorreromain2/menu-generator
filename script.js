@@ -185,6 +185,7 @@ function showTab(tabName, event) {
   }
 }
 
+// === Met à jour l'état d'affichage selon les plats présents ===
 function updateDishesTab() {
   const list = document.getElementById('dishesList');
   const empty = document.getElementById('noDishes');
@@ -197,14 +198,20 @@ function updateDishesTab() {
     list.classList.add('hidden');
     empty.style.display = 'flex';
   }
-updateDishesTab();
 }
 
+// === Met à jour l'affichage de l'onglet "Menus" ===
 function updateMenusTab() {
-  if (menus.length === 0) {
-    document.getElementById('noMenus').style.display = 'flex';
+  const list = document.getElementById('menusList');
+  const empty = document.getElementById('noMenus');
+  const hasItems = document.querySelectorAll('#menusContainer .menu-item').length > 0;
+
+  if (hasItems) {
+    list.classList.remove('hidden');
+    empty.style.display = 'none';
   } else {
-    document.getElementById('noMenus').style.display = 'none';
+    list.classList.add('hidden');
+    empty.style.display = 'flex';
   }
 }
 
@@ -246,9 +253,7 @@ function listenToFirebase() {
 
     console.log('✅ Plats récupérés depuis Firebase :', dishes.length);
 renderDishes();
-
-// 🕒 petit délai pour laisser le DOM se mettre à jour
-setTimeout(() => updateDishesTab(), 50);
+updateSyncIcon(false);
 
 updateSyncIcon(false);
     document.getElementById('dishCount').textContent =
@@ -273,8 +278,7 @@ updateSyncIcon(false);
     ).sort((a, b) => b.weekNumber - a.weekNumber);
 
     renderMenus();
-    updateMenusTab();
-  });
+      });
 
   configRef.on('value', snapshot => {
     const data = snapshot.val();
@@ -381,32 +385,42 @@ function deleteDish(id) {
   }
 }
 
+// === Affiche la liste des plats ===
 function renderDishes() {
-  if (dishes.length === 0) {
-    document.getElementById('dishesList').classList.add('hidden');
+  const container = document.getElementById('dishesContainer');
+  const listWrapper = document.getElementById('dishesList');
+  const countEl = document.getElementById('dishCount');
+
+  // Si pas de plats
+  if (!dishes || dishes.length === 0) {
+    container.innerHTML = '';
+    countEl.textContent = 0;
+    updateDishesTab();
     return;
   }
 
-  document.getElementById('dishesList').classList.remove('hidden');
-  document.getElementById('dishCount').textContent = dishes.length;
-  
-  const container = document.getElementById('dishesContainer');
+  // Nettoyer le conteneur avant rendu
   container.innerHTML = '';
-  
+
+  // Construire chaque plat
   dishes.forEach(dish => {
     const dishEl = document.createElement('div');
     dishEl.className = 'dish-item';
-    
+
+    // --- Construction des tags ---
     let tagsHTML = '';
-if (Array.isArray(dish.seasons)) {
-  dish.seasons.forEach(s => {
-    tagsHTML += `<span class="tag">${s}</span>`;
-  });
-}
+
+    if (Array.isArray(dish.seasons)) {
+      dish.seasons.forEach(s => {
+        tagsHTML += `<span class="tag">${s}</span>`;
+      });
+    }
+
     if (dish.sportDay) tagsHTML += `<span class="tag tag-blue">Sport</span>`;
     if (dish.vegetarian) tagsHTML += `<span class="tag tag-green">Végé</span>`;
     if (dish.grillades) tagsHTML += `<span class="tag tag-orange">Grill</span>`;
-    
+
+    // --- Structure HTML du plat ---
     dishEl.innerHTML = `
       <div style="flex: 1;">
         <div class="dish-name">${dish.name}</div>
@@ -421,13 +435,19 @@ if (Array.isArray(dish.seasons)) {
         </button>
       </div>
     `;
-    
-    // ✅ Ajout des listeners en JS (plus sûr)
+
+    // --- Gestion des boutons ---
     dishEl.querySelector('.edit-btn').addEventListener('click', () => openEditDishModal(dish));
     dishEl.querySelector('.delete-btn').addEventListener('click', () => deleteDish(dish.id));
-    
+
     container.appendChild(dishEl);
   });
+
+  // Met à jour le compteur selon les plats affichés
+  countEl.textContent = document.querySelectorAll('#dishesContainer .dish-item').length;
+
+  // ✅ Appel unique ici (aucune récursion)
+  updateDishesTab();
 }
 
 
@@ -511,44 +531,72 @@ console.table(availableDishes);
   showTab('menus');
 }
 
+// === Affiche la liste des menus générés ===
 function renderMenus() {
-  const container = document.getElementById('menusList');
+  const container = document.getElementById('menusContainer');
+  const countEl = document.getElementById('menuCount');
+
+  if (!menus || menus.length === 0) {
+    container.innerHTML = '';
+    countEl.textContent = 0;
+    updateMenusTab();
+    return;
+  }
+
+  // Vide le conteneur avant affichage
   container.innerHTML = '';
-  
+
   menus.forEach(menu => {
-    const menuCard = document.createElement('div');
-    menuCard.className = 'card';
-    
+    const menuEl = document.createElement('div');
+    menuEl.className = 'menu-item';
+
+    // Nom de la semaine
+    const weekTitle = `Semaine ${menu.weekNumber}`;
+
+    // Construction du planning jour / repas
     let scheduleHTML = '';
-    menu.schedule.forEach(day => {
-      scheduleHTML += `
-        <div class="day-card">
-          <div class="day-header">
-            <span class="day-name">${day.day}</span>
-            ${day.isSportDay ? '<span class="sport-badge">💪 Sport</span>' : ''}
+    if (Array.isArray(menu.schedule)) {
+      menu.schedule.forEach(day => {
+        scheduleHTML += `
+          <div class="menu-day">
+            <div class="menu-day-title">${day.day}</div>
+            <div class="menu-meals">
+              <div><strong>Midi :</strong> ${day.lunch || '-'}</div>
+              <div><strong>Soir :</strong> ${day.dinner || '-'}</div>
+            </div>
           </div>
-          <div class="meal">
-            <div class="meal-label">Déjeuner</div>
-            <div class="meal-name">${day.lunch?.name || 'Non défini'}</div>
-          </div>
-          <div class="meal">
-            <div class="meal-label">Dîner</div>
-            <div class="meal-name">${day.dinner?.name || 'Non défini'}</div>
-          </div>
+        `;
+      });
+    }
+
+    // Structure HTML finale
+    menuEl.innerHTML = `
+      <div class="menu-header">
+        <div class="menu-title">${weekTitle}</div>
+        <div class="menu-actions">
+          <button class="icon-btn view-btn" title="Voir le menu">
+            <span class="material-icons">visibility</span>
+          </button>
+          <button class="icon-btn delete-btn" title="Supprimer le menu">
+            <span class="material-icons">delete</span>
+          </button>
         </div>
-      `;
-    });
-    
-    menuCard.innerHTML = `
-      <div class="card-title">
-        <span class="material-icons">calendar_today</span>
-        Semaine ${menu.weekNumber} - ${menu.date}
       </div>
-      ${scheduleHTML}
+      <div class="menu-body">${scheduleHTML}</div>
     `;
-    
-    container.appendChild(menuCard);
+
+    // Gestion des boutons
+    menuEl.querySelector('.view-btn').addEventListener('click', () => openMenuModal(menu));
+    menuEl.querySelector('.delete-btn').addEventListener('click', () => deleteMenu(menu.id));
+
+    container.appendChild(menuEl);
   });
+
+  // Mise à jour du compteur
+  countEl.textContent = document.querySelectorAll('#menusContainer .menu-item').length;
+
+  // ✅ Appel unique ici
+  updateMenusTab();
 }
 
 // ===== CONFIGURATION =====
