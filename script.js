@@ -547,6 +547,12 @@ function renderMenus() {
   const container = document.getElementById('menusContainer');
   const countEl = document.getElementById('menuCount');
 
+    // ✅ Sécurité : si les éléments ne sont pas encore dans le DOM, on annule
+  if (!container || !countEl) {
+    console.warn('⏳ Conteneur des menus introuvable, rendu annulé pour le moment.');
+    return;
+  }
+
   if (!menus || menus.length === 0) {
     container.innerHTML = '';
     countEl.textContent = 0;
