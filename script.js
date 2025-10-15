@@ -206,54 +206,67 @@ function updateMenusTab() {
 // ===== FIREBASE =====
 
 function listenToFirebase() {
-  database.ref(`groups/${groupId}/dishes`).on('value', snapshot => {
+  if (!groupId) {
+    console.warn('⛔ Aucun groupId défini, impossible d’écouter Firebase.');
+    showToast('❌ Aucun groupe sélectionné.');
+    return;
+  }
+
+  console.log('🔄 Écoute de Firebase sur le groupe :', groupId);
+
+  const dishesRef = database.ref(`groups/${groupId}/dishes`);
+  const menusRef = database.ref(`groups/${groupId}/menus`);
+  const configRef = database.ref(`groups/${groupId}/config`);
+
+  dishesRef.on('value', snapshot => {
     const data = snapshot.val();
-    if (data) {
-      const dishesArray = Object.entries(data).map(([key, value]) => ({
-        ...value,
-        id: key
-      }));
-      
-      const uniqueDishes = Object.values(
-        dishesArray.reduce((acc, dish) => {
-          if (!acc[dish.name] || acc[dish.name].id < dish.id) {
-            acc[dish.name] = dish;
-          }
-          return acc;
-        }, {})
-      );
-      
-      dishes = uniqueDishes;
-      renderDishes();
+    if (!data) {
+      console.warn('⚠️ Aucun plat trouvé dans Firebase pour', groupId);
+      dishes = [];
       updateDishesTab();
+      return;
     }
+
+    const dishesArray = Object.entries(data).map(([key, value]) => ({
+      ...value,
+      id: key
+    }));
+
+    dishes = Object.values(
+      dishesArray.reduce((acc, dish) => {
+        if (!acc[dish.name] || acc[dish.name].id < dish.id) acc[dish.name] = dish;
+        return acc;
+      }, {})
+    );
+
+    console.log('✅ Plats récupérés depuis Firebase :', dishes.length);
+    renderDishes();
+    updateDishesTab();
     updateSyncIcon(false);
   });
 
-  database.ref(`groups/${groupId}/menus`).on('value', snapshot => {
+  menusRef.on('value', snapshot => {
     const data = snapshot.val();
-    if (data) {
-      const menusArray = Object.entries(data).map(([key, value]) => ({
-        ...value,
-        id: key
-      }));
-      
-      const uniqueMenus = Object.values(
-        menusArray.reduce((acc, menu) => {
-          if (!acc[menu.weekNumber] || acc[menu.weekNumber].id < menu.id) {
-            acc[menu.weekNumber] = menu;
-          }
-          return acc;
-        }, {})
-      );
-      
-      menus = uniqueMenus.sort((a, b) => b.weekNumber - a.weekNumber);
-      renderMenus();
-      updateMenusTab();
-    }
+    if (!data) return;
+
+    const menusArray = Object.entries(data).map(([key, value]) => ({
+      ...value,
+      id: key
+    }));
+
+    menus = Object.values(
+      menusArray.reduce((acc, menu) => {
+        if (!acc[menu.weekNumber] || acc[menu.weekNumber].id < menu.id)
+          acc[menu.weekNumber] = menu;
+        return acc;
+      }, {})
+    ).sort((a, b) => b.weekNumber - a.weekNumber);
+
+    renderMenus();
+    updateMenusTab();
   });
 
-  database.ref(`groups/${groupId}/config`).on('value', snapshot => {
+  configRef.on('value', snapshot => {
     const data = snapshot.val();
     if (data) {
       menuConfig = data;
@@ -650,6 +663,7 @@ function showTooltip(text, event) {
 }
 
 function hideTooltip() {
+  if (!tooltip) return;
   tooltip.classList.remove('show');
 }
 
