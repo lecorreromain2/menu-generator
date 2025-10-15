@@ -227,69 +227,77 @@ function listenToFirebase() {
     return;
   }
 
-  console.log('🔄 Écoute de Firebase sur le groupe :', groupId);
+  console.log('🎧 Nouvelle écoute Firebase sur le groupe :', groupId);
 
-  const dishesRef = database.ref(`groups/${groupId}/dishes`);
-  const menusRef = database.ref(`groups/${groupId}/menus`);
-  const configRef = database.ref(`groups/${groupId}/config`);
+  // 🔄 Supprimer toute ancienne écoute pour éviter les doublons
+  database.ref().off();
 
-  dishesRef.on('value', snapshot => {
-    const data = snapshot.val();
-    if (!data) {
-      console.warn('⚠️ Aucun plat trouvé dans Firebase pour', groupId);
-      dishes = [];
-      updateDishesTab();
-      return;
-    }
+  // ⏳ Laisse le temps à Firebase de créer les nœuds
+  setTimeout(() => {
+    const dishesRef = database.ref(`groups/${groupId}/dishes`);
+    const menusRef = database.ref(`groups/${groupId}/menus`);
+    const configRef = database.ref(`groups/${groupId}/config`);
 
-    const dishesArray = Object.entries(data).map(([key, value]) => ({
-      ...value,
-      id: key
-    }));
+    dishesRef.on('value', snapshot => {
+      const data = snapshot.val();
+      if (!data) {
+        console.warn('⚠️ Aucun plat trouvé dans Firebase pour', groupId);
+        dishes = [];
+        renderDishes();
+        updateSyncIcon(false);
+        return;
+      }
 
-    dishes = Object.values(
-      dishesArray.reduce((acc, dish) => {
-        if (!acc[dish.name] || acc[dish.name].id < dish.id) acc[dish.name] = dish;
-        return acc;
-      }, {})
-    );
+      const dishesArray = Object.entries(data).map(([key, value]) => ({
+        ...value,
+        id: key
+      }));
 
-    console.log('✅ Plats récupérés depuis Firebase :', dishes.length);
-renderDishes();
-updateSyncIcon(false);
+      dishes = Object.values(
+        dishesArray.reduce((acc, dish) => {
+          if (!acc[dish.name] || acc[dish.name].id < dish.id)
+            acc[dish.name] = dish;
+          return acc;
+        }, {})
+      );
 
-updateSyncIcon(false);
-    document.getElementById('dishCount').textContent =
-  document.querySelectorAll('#dishesContainer .dish-item').length;
-  });
+      console.log('✅ Plats récupérés depuis Firebase :', dishes.length);
+      renderDishes();
+      updateSyncIcon(false);
+    });
 
-  menusRef.on('value', snapshot => {
-    const data = snapshot.val();
-    if (!data) return;
+    menusRef.on('value', snapshot => {
+      const data = snapshot.val();
+      if (!data) {
+        menus = [];
+        renderMenus();
+        return;
+      }
 
-    const menusArray = Object.entries(data).map(([key, value]) => ({
-      ...value,
-      id: key
-    }));
+      const menusArray = Object.entries(data).map(([key, value]) => ({
+        ...value,
+        id: key
+      }));
 
-    menus = Object.values(
-      menusArray.reduce((acc, menu) => {
-        if (!acc[menu.weekNumber] || acc[menu.weekNumber].id < menu.id)
-          acc[menu.weekNumber] = menu;
-        return acc;
-      }, {})
-    ).sort((a, b) => b.weekNumber - a.weekNumber);
+      menus = Object.values(
+        menusArray.reduce((acc, menu) => {
+          if (!acc[menu.weekNumber] || acc[menu.weekNumber].id < menu.id)
+            acc[menu.weekNumber] = menu;
+          return acc;
+        }, {})
+      ).sort((a, b) => b.weekNumber - a.weekNumber);
 
-    renderMenus();
-      });
+      renderMenus();
+    });
 
-  configRef.on('value', snapshot => {
-    const data = snapshot.val();
-    if (data) {
-      menuConfig = data;
-      updateConfigUI();
-    }
-  });
+    configRef.on('value', snapshot => {
+      const data = snapshot.val();
+      if (data) {
+        menuConfig = data;
+        updateConfigUI();
+      }
+    });
+  }, 500); // ⏳ Délai court pour garantir que les nœuds existent
 }
 
 // ===== PLATS =====
