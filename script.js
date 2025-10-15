@@ -186,13 +186,18 @@ function showTab(tabName, event) {
 }
 
 function updateDishesTab() {
-  if (dishes.length === 0) {
-    document.getElementById('dishesList').classList.add('hidden');
-    document.getElementById('noDishes').style.display = 'flex';
+  const list = document.getElementById('dishesList');
+  const empty = document.getElementById('noDishes');
+  const hasItems = document.querySelectorAll('#dishesContainer .dish-item').length > 0;
+
+  if (hasItems) {
+    list.classList.remove('hidden');
+    empty.style.display = 'none';
   } else {
-    document.getElementById('dishesList').classList.remove('hidden');
-    document.getElementById('noDishes').style.display = 'none';
+    list.classList.add('hidden');
+    empty.style.display = 'flex';
   }
+updateDishesTab();
 }
 
 function updateMenusTab() {
@@ -240,9 +245,14 @@ function listenToFirebase() {
     );
 
     console.log('✅ Plats récupérés depuis Firebase :', dishes.length);
-    renderDishes();
-    updateDishesTab();
-    updateSyncIcon(false);
+renderDishes();
+
+// 🕒 petit délai pour laisser le DOM se mettre à jour
+setTimeout(() => updateDishesTab(), 50);
+
+updateSyncIcon(false);
+    document.getElementById('dishCount').textContent =
+  document.querySelectorAll('#dishesContainer .dish-item').length;
   });
 
   menusRef.on('value', snapshot => {
@@ -388,8 +398,10 @@ function renderDishes() {
     dishEl.className = 'dish-item';
     
     let tagsHTML = '';
+    if (Array.isArray(dish.seasons)) {
     dish.seasons.forEach(s => {
-      tagsHTML += `<span class="tag">${s}</span>`;
+    tagsHTML += `<span class="tag">${s}</span>`;
+    });
     });
     if (dish.sportDay) tagsHTML += `<span class="tag tag-blue">Sport</span>`;
     if (dish.vegetarian) tagsHTML += `<span class="tag tag-green">Végé</span>`;
