@@ -30,10 +30,13 @@ window.onload = function() {
   initSeasonChips();
   initSportDaysChips();
   
-  if (groupId) {
-    showMainApp();
-    listenToFirebase();
-  }
+if (groupId) {
+  console.log('🔗 Reconnexion au groupe :', groupId);
+  showMainApp();
+  listenToFirebase();
+} else {
+  console.log('🕓 Aucun groupe actif au démarrage');
+}
 
   setupPWA();// ✅ Initialise le tooltip après que le DOM est prêt
   const syncIcon = document.getElementById('syncIcon');
