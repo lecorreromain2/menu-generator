@@ -34,6 +34,7 @@ self.addEventListener('activate', event => {
 
 // Network First, Cache Fallback
 self.addEventListener('fetch', event => {
+  if (event.request.url.startsWith('chrome-extension')) return;
   if (event.request.url.includes('firebase') || event.request.url.includes('firebaseio.com')) {
     return;
   }
