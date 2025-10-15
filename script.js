@@ -221,6 +221,18 @@ function updateMenusTab() {
 // ===== FIREBASE =====
 
 function listenToFirebase() {
+
+    if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
+    console.warn('⏳ Firebase non initialisé — écoute retardée.');
+    setTimeout(listenToFirebase, 500);
+    return;
+  }
+
+  if (!database) {
+    console.warn('❌ Base de données non initialisée.');
+    return;
+  }
+  
   if (!groupId) {
     console.warn('⛔ Aucun groupId défini, impossible d’écouter Firebase.');
     showToast('❌ Aucun groupe sélectionné.');
@@ -758,4 +770,28 @@ window.showCreateGroup = showCreateGroup;
 window.showJoinGroup = showJoinGroup;
 window.joinGroup = joinGroup;
 window.leaveGroup = leaveGroup;
+
+// === Attendre que la page et Firebase soient prêts avant de démarrer ===
+window.onload = () => {
+  console.log('🌐 Page chargée, vérification Firebase...');
+
+  // Vérifie périodiquement si Firebase est initialisé
+  const waitForFirebase = setInterval(() => {
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+      clearInterval(waitForFirebase);
+      console.log('🔥 Firebase initialisé, lancement de l’écoute Firebase...');
+      
+      // Si un groupe existe déjà, on recharge ses données
+      const savedGroupId = localStorage.getItem('groupId');
+      if (savedGroupId) {
+        groupId = savedGroupId;
+        console.log('🔗 Groupe détecté au démarrage :', groupId);
+        showMainApp();
+        listenToFirebase();
+      } else {
+        console.log('🕓 Aucun groupe actif au démarrage.');
+      }
+    }
+  }, 200);
+};
 
