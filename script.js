@@ -572,74 +572,86 @@ function regenerateMenu(menuId, weekNumber) {
 
 function renderMenus() {
   const container = document.getElementById('menusList');
-
-  if (!container) {
-    console.warn('⏳ Conteneur menus introuvable');
-    return;
-  }
+  if (!container) return;
 
   if (!menus || menus.length === 0) {
-    container.innerHTML = '';
-    updateMenusTab();
+    container.innerHTML = '<p style="text-align:center;">Aucun menu enregistré pour le moment.</p>';
     return;
   }
 
   container.innerHTML = '';
 
-  menus.forEach(menu => {
+  // Trier par semaine décroissante (le plus récent en haut)
+  const sortedMenus = [...menus].sort((a, b) => b.weekNumber - a.weekNumber);
+
+  sortedMenus.forEach((menu, index) => {
     const menuCard = document.createElement('div');
     menuCard.className = 'card';
 
-    let scheduleHTML = '';
-    if (Array.isArray(menu.schedule)) {
-      menu.schedule.forEach(day => {
-        scheduleHTML += `
-          <div class="day-card">
-            <div class="day-header">
-              <span class="day-name">${day.day}</span>
-              ${day.isSportDay ? '<span class="sport-badge">💪 Sport</span>' : ''}
-            </div>
-            <div class="meal">
-              <div class="meal-label">Déjeuner</div>
-              <div class="meal-name">${day.lunch?.name || 'Non défini'}</div>
-            </div>
-            <div class="meal">
-              <div class="meal-label">Dîner</div>
-              <div class="meal-name">${day.dinner?.name || 'Non défini'}</div>
-            </div>
-          </div>
-        `;
-      });
-    }
-
+    // === HEADER DE LA SEMAINE ===
+    const displayedWeek = Number.isFinite(menu.weekNumber) ? (menu.weekNumber + 1) : menu.weekNumber;
     const dateRange = menu.startDate && menu.endDate
       ? `Du ${menu.startDate} au ${menu.endDate}`
-      : menu.date || '';
+      : '';
 
-    // Afficher semaine +1 par rapport à la valeur stockée pour correspondre à ta demande d'affichage
-    const displayedWeek = Number.isFinite(menu.weekNumber) ? (menu.weekNumber + 1) : menu.weekNumber;
+    const isLatest = index === 0; // on ouvre par défaut le plus récent
+    const contentId = `menu-content-${menu.id}`;
 
     menuCard.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <div class="card-title" style="margin-bottom: 0;">
+      <div class="menu-header" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;" 
+           onclick="toggleMenuContent('${contentId}')">
+        <div style="display:flex; align-items:center; gap:8px;">
           <span class="material-icons">calendar_today</span>
           <div>
-            <div>Semaine ${displayedWeek}</div>
-            <div style="font-size: 12px; font-weight: 400; color: var(--md-on-surface-variant);">${dateRange}</div>
+            <div><strong>Semaine ${displayedWeek}</strong></div>
+            <div style="font-size:12px; color:var(--md-on-surface-variant);">${dateRange}</div>
           </div>
         </div>
-        <button class="icon-btn" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber})" title="Régénérer ce menu">
-          <span class="material-icons">refresh</span>
-        </button>
+        <span class="material-icons toggle-icon" id="icon-${contentId}">${isLatest ? 'expand_less' : 'expand_more'}</span>
       </div>
-      ${scheduleHTML}
+
+      <div id="${contentId}" class="menu-content" style="margin-top:10px; display:${isLatest ? 'block' : 'none'};">
+        ${renderMenuSchedule(menu.schedule)}
+      </div>
     `;
 
     container.appendChild(menuCard);
   });
-
-  updateMenusTab();
 }
+
+// === Fonction utilitaire pour générer le HTML des jours ===
+function renderMenuSchedule(schedule) {
+  if (!Array.isArray(schedule)) return '<p>Aucune donnée de menu.</p>';
+
+  return schedule.map(day => `
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-name">${day.day}</span>
+        ${day.isSportDay ? '<span class="sport-badge">💪 Sport</span>' : ''}
+      </div>
+      <div class="meal">
+        <div class="meal-label">Déjeuner</div>
+        <div class="meal-name">${day.lunch?.name || 'Non défini'}</div>
+      </div>
+      <div class="meal">
+        <div class="meal-label">Dîner</div>
+        <div class="meal-name">${day.dinner?.name || 'Non défini'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// === Fonction utilitaire pour l'accordéon ===
+function toggleMenuContent(id) {
+  const content = document.getElementById(id);
+  const icon = document.getElementById('icon-' + id);
+  if (!content || !icon) return;
+
+  const isVisible = content.style.display === 'block';
+  content.style.display = isVisible ? 'none' : 'block';
+  icon.textContent = isVisible ? 'expand_more' : 'expand_less';
+}
+
 
 
 // ===== CONFIGURATION =====
