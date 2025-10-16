@@ -454,59 +454,81 @@ function renderDishes() {
 function generateMenu(targetWeekNumber = null) {
   const currentSeason = getCurrentSeason();
   const recentlyUsed = getRecentlyUsedDishes();
-  
+
   // Si pas de numéro de semaine spécifié, générer pour la semaine prochaine
   const weekNumber = targetWeekNumber || (getWeekNumber(new Date()) + 1);
-  
-  // Filtrer les plats disponibles
-  const availableDishes = dishes.filter(d => 
-    !recentlyUsed.has(d.id) && 
-    (d.seasons.length === 0 || d.seasons.includes(currentSeason))
-  );
+
+  // Défaut max apparitions par plat (1 ou 2) — utilise menuConfig.maxAppearances si défini
+  const maxAppearances = Number.isInteger(menuConfig.maxAppearances) ? menuConfig.maxAppearances : 1;
+
+  // Filtrer les plats disponibles (saisons + non utilisés récemment)
+  const availableDishes = dishes.filter(d => {
+    const hasSeasons = Array.isArray(d.seasons) && d.seasons.length > 0;
+    const matchSeason = !hasSeasons || d.seasons.includes(currentSeason);
+    return !recentlyUsed.has(d.id) && matchSeason;
+  });
 
   if (availableDishes.length < 14) {
     showToast('❌ Pas assez de plats disponibles !', 5000);
+    console.warn('Génération annulée — plats disponibles:', availableDishes.length);
     return;
   }
 
   const schedule = [];
-  const usedInMenu = new Map(); // Compte combien de fois chaque plat est utilisé
+  const usedInMenu = new Map(); // map dishId -> count in this menu
+
+  // Helper : choisir un plat selon contraintes
+  function pickDish({ excludeIds = new Set(), requireSport = false }) {
+    // 1) candidats qui respectent sport (si required) ou all
+    let candidates = availableDishes.filter(d => !excludeIds.has(d.id));
+    if (requireSport) {
+      const sportCandidates = candidates.filter(d => d.sportDay);
+      if (sportCandidates.length > 0) candidates = sportCandidates;
+      // otherwise keep original candidates as fallback
+    }
+
+    // prefer dishes that haven't been used in this menu yet
+    let preferred = candidates.filter(d => !usedInMenu.has(d.id));
+    if (preferred.length > 0) return preferred[Math.floor(Math.random() * preferred.length)];
+
+    // then prefer dishes used < maxAppearances
+    let allowed = candidates.filter(d => (usedInMenu.get(d.id) || 0) < maxAppearances);
+    if (allowed.length > 0) return allowed[Math.floor(Math.random() * allowed.length)];
+
+    // no candidate (shouldn't happen if availableDishes abundant) -> null
+    return null;
+  }
 
   for (let i = 0; i < 7; i++) {
     const day = daysOfWeek[i];
-    const isSportDay = menuConfig.sportDays.includes(day);
-    
+    const isSportDay = Array.isArray(menuConfig.sportDays) && menuConfig.sportDays.includes(day);
+
     // === DÉJEUNER ===
     let lunchDish = null;
-    if (menuConfig.mealDuration.lunch === 2 && i > 0 && schedule[i - 1].lunch) {
-      // Répéter le plat du jour précédent
+    if (menuConfig.mealDuration && menuConfig.mealDuration.lunch === 2 && i > 0 && schedule[i - 1].lunch) {
+      // répéter le plat du jour précédent
       lunchDish = schedule[i - 1].lunch;
+      usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
     } else {
-      // Choisir un nouveau plat (max 2 fois dans le menu)
-      const filtered = availableDishes.filter(d => 
-        !usedInMenu.has(d.id) || usedInMenu.get(d.id) < 2
-      );
-      if (filtered.length > 0) {
-        lunchDish = filtered[Math.floor(Math.random() * filtered.length)];
-        usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
-      }
+      const exclude = new Set();
+      const requireSport = !!isSportDay;
+      lunchDish = pickDish({ excludeIds: exclude, requireSport });
+      if (lunchDish) usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
     }
 
     // === DÎNER ===
     let dinnerDish = null;
-    if (menuConfig.mealDuration.dinner === 2 && i > 0 && schedule[i - 1].dinner) {
-      // Répéter le plat du jour précédent
+    if (menuConfig.mealDuration && menuConfig.mealDuration.dinner === 2 && i > 0 && schedule[i - 1].dinner) {
       dinnerDish = schedule[i - 1].dinner;
+      usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
     } else {
-      // Choisir un nouveau plat différent du déjeuner (max 2 fois dans le menu)
-      const filtered = availableDishes.filter(d => 
-        d.id !== lunchDish?.id && // Différent du déjeuner du même jour
-        (!usedInMenu.has(d.id) || usedInMenu.get(d.id) < 2)
-      );
-      if (filtered.length > 0) {
-        dinnerDish = filtered[Math.floor(Math.random() * filtered.length)];
-        usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
-      }
+      // Exclure le même plat que le déjeuner du jour
+      const exclude = new Set();
+      if (lunchDish) exclude.add(lunchDish.id);
+      const requireSport = !!isSportDay;
+      dinnerDish = pickDish({ excludeIds: exclude, requireSport });
+      // If none found with sport requirement, fallback to not requiring sport (handled in pickDish)
+      if (dinnerDish) usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
     }
 
     schedule.push({ day, lunch: lunchDish, dinner: dinnerDish, isSportDay });
@@ -526,14 +548,11 @@ function generateMenu(targetWeekNumber = null) {
   updateSyncIcon(true);
   database.ref(`groups/${groupId}/menus/${newMenu.id}`).set(newMenu);
   showToast('✅ Menu généré !');
-  
-  // Passer à l'onglet menus
-  document.getElementById('dishesTab').classList.remove('active');
-  document.getElementById('menusTab').classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelectorAll('.tab-btn')[1].classList.add('active');
-  updateMenusTab();
+
+  // basculer sur l'onglet menus
+  showTab('menus');
 }
+
 
 function regenerateMenu(menuId, weekNumber) {
   if (confirm('Voulez-vous régénérer ce menu ? L\'ancien sera remplacé.')) {
@@ -546,7 +565,7 @@ function regenerateMenu(menuId, weekNumber) {
 
 function renderMenus() {
   const container = document.getElementById('menusList');
-  
+
   if (!container) {
     console.warn('⏳ Conteneur menus introuvable');
     return;
@@ -563,7 +582,7 @@ function renderMenus() {
   menus.forEach(menu => {
     const menuCard = document.createElement('div');
     menuCard.className = 'card';
-    
+
     let scheduleHTML = '';
     if (Array.isArray(menu.schedule)) {
       menu.schedule.forEach(day => {
@@ -585,17 +604,20 @@ function renderMenus() {
         `;
       });
     }
-    
-    const dateRange = menu.startDate && menu.endDate 
+
+    const dateRange = menu.startDate && menu.endDate
       ? `Du ${menu.startDate} au ${menu.endDate}`
       : menu.date || '';
-    
+
+    // Afficher semaine +1 par rapport à la valeur stockée pour correspondre à ta demande d'affichage
+    const displayedWeek = Number.isFinite(menu.weekNumber) ? (menu.weekNumber + 1) : menu.weekNumber;
+
     menuCard.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <div class="card-title" style="margin-bottom: 0;">
           <span class="material-icons">calendar_today</span>
           <div>
-            <div>Semaine ${menu.weekNumber}</div>
+            <div>Semaine ${displayedWeek}</div>
             <div style="font-size: 12px; font-weight: 400; color: var(--md-on-surface-variant);">${dateRange}</div>
           </div>
         </div>
@@ -605,12 +627,13 @@ function renderMenus() {
       </div>
       ${scheduleHTML}
     `;
-    
+
     container.appendChild(menuCard);
   });
 
   updateMenusTab();
 }
+
 
 // ===== CONFIGURATION =====
 
@@ -695,10 +718,12 @@ function getCurrentSeason() {
 }
 
 function getRecentlyUsedDishes() {
-  const currentWeek = getWeekNumber(new Date());
+  // On considère que les menus sont identifiés par semaine = semaine_courante + 1
+  const currentWeek = getWeekNumber(new Date()) + 1;
   const recentMenus = menus.filter(m => currentWeek - m.weekNumber <= 3 && currentWeek - m.weekNumber >= 0);
   const usedDishIds = new Set();
   recentMenus.forEach(menu => {
+    if (!Array.isArray(menu.schedule)) return;
     menu.schedule.forEach(day => {
       if (day.lunch) usedDishIds.add(day.lunch.id);
       if (day.dinner) usedDishIds.add(day.dinner.id);
