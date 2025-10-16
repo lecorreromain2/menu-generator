@@ -359,6 +359,12 @@ function saveDish() {
     return;
   }
 
+  // ✅ Vérifier qu'au moins une saison est sélectionnée
+  if (newDishSeasons.length === 0) {
+    showToast('❌ Veuillez sélectionner au moins une saison');
+    return;
+  }
+
   const dish = {
     id: editingDishId || Date.now(),
     name: name,
@@ -373,6 +379,10 @@ function saveDish() {
   
   const message = editingDishId ? '✅ Plat modifié !' : '✅ Plat ajouté !';
   showToast(message);
+  
+  // ✅ Réinitialiser le formulaire
+  editingDishId = null;
+  newDishSeasons = [];
   
   closeModal('addDishModal');
 }
@@ -441,9 +451,14 @@ function renderDishes() {
 
 // ===== MENU =====
 
-function generateMenu() {
+function generateMenu(targetWeekNumber = null) {
   const currentSeason = getCurrentSeason();
   const recentlyUsed = getRecentlyUsedDishes();
+  
+  // Si pas de numéro de semaine spécifié, générer pour la semaine prochaine
+  const weekNumber = targetWeekNumber || (getWeekNumber(new Date()) + 1);
+  
+  // Filtrer les plats disponibles
   const availableDishes = dishes.filter(d => 
     !recentlyUsed.has(d.id) && 
     (d.seasons.length === 0 || d.seasons.includes(currentSeason))
@@ -455,41 +470,56 @@ function generateMenu() {
   }
 
   const schedule = [];
-  const usedInMenu = new Set();
+  const usedInMenu = new Map(); // Compte combien de fois chaque plat est utilisé
 
   for (let i = 0; i < 7; i++) {
     const day = daysOfWeek[i];
     const isSportDay = menuConfig.sportDays.includes(day);
     
+    // === DÉJEUNER ===
     let lunchDish = null;
     if (menuConfig.mealDuration.lunch === 2 && i > 0 && schedule[i - 1].lunch) {
+      // Répéter le plat du jour précédent
       lunchDish = schedule[i - 1].lunch;
     } else {
-      const filtered = availableDishes.filter(d => !usedInMenu.has(d.id));
+      // Choisir un nouveau plat (max 2 fois dans le menu)
+      const filtered = availableDishes.filter(d => 
+        !usedInMenu.has(d.id) || usedInMenu.get(d.id) < 2
+      );
       if (filtered.length > 0) {
         lunchDish = filtered[Math.floor(Math.random() * filtered.length)];
-        usedInMenu.add(lunchDish.id);
+        usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
       }
     }
 
+    // === DÎNER ===
     let dinnerDish = null;
     if (menuConfig.mealDuration.dinner === 2 && i > 0 && schedule[i - 1].dinner) {
+      // Répéter le plat du jour précédent
       dinnerDish = schedule[i - 1].dinner;
     } else {
-      const filtered = availableDishes.filter(d => !usedInMenu.has(d.id));
+      // Choisir un nouveau plat différent du déjeuner (max 2 fois dans le menu)
+      const filtered = availableDishes.filter(d => 
+        d.id !== lunchDish?.id && // Différent du déjeuner du même jour
+        (!usedInMenu.has(d.id) || usedInMenu.get(d.id) < 2)
+      );
       if (filtered.length > 0) {
         dinnerDish = filtered[Math.floor(Math.random() * filtered.length)];
-        usedInMenu.add(dinnerDish.id);
+        usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
       }
     }
 
     schedule.push({ day, lunch: lunchDish, dinner: dinnerDish, isSportDay });
   }
 
+  // Calculer les dates du lundi et dimanche de la semaine
+  const weekDates = getWeekDates(weekNumber);
+
   const newMenu = {
     id: Date.now(),
-    weekNumber: getWeekNumber(new Date()),
-    date: new Date().toLocaleDateString('fr-FR'),
+    weekNumber: weekNumber,
+    startDate: weekDates.monday,
+    endDate: weekDates.sunday,
     schedule
   };
 
@@ -503,6 +533,15 @@ function generateMenu() {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-btn')[1].classList.add('active');
   updateMenusTab();
+}
+
+function regenerateMenu(menuId, weekNumber) {
+  if (confirm('Voulez-vous régénérer ce menu ? L\'ancien sera remplacé.')) {
+    // Supprimer l'ancien menu
+    database.ref(`groups/${groupId}/menus/${menuId}`).remove();
+    // Générer un nouveau menu pour la même semaine
+    generateMenu(weekNumber);
+  }
 }
 
 function renderMenus() {
@@ -547,10 +586,22 @@ function renderMenus() {
       });
     }
     
+    const dateRange = menu.startDate && menu.endDate 
+      ? `Du ${menu.startDate} au ${menu.endDate}`
+      : menu.date || '';
+    
     menuCard.innerHTML = `
-      <div class="card-title">
-        <span class="material-icons">calendar_today</span>
-        Semaine ${menu.weekNumber} - ${menu.date}
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div class="card-title" style="margin-bottom: 0;">
+          <span class="material-icons">calendar_today</span>
+          <div>
+            <div>Semaine ${menu.weekNumber}</div>
+            <div style="font-size: 12px; font-weight: 400; color: var(--md-on-surface-variant);">${dateRange}</div>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber})" title="Régénérer ce menu">
+          <span class="material-icons">refresh</span>
+        </button>
       </div>
       ${scheduleHTML}
     `;
@@ -604,6 +655,35 @@ function getWeekNumber(date) {
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function getWeekDates(weekNumber) {
+  const year = new Date().getFullYear();
+  
+  // Trouver le premier lundi de l'année
+  const jan1 = new Date(year, 0, 1);
+  const dayOfWeek = jan1.getDay();
+  const daysToMonday = (dayOfWeek === 0 ? 1 : 8 - dayOfWeek);
+  const firstMonday = new Date(year, 0, 1 + daysToMonday);
+  
+  // Calculer le lundi de la semaine demandée
+  const monday = new Date(firstMonday);
+  monday.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
+  
+  // Calculer le dimanche
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  
+  const formatDate = (date) => {
+    const d = date.getDate().toString().padStart(2, '0');
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    return `${d}/${m}`;
+  };
+  
+  return {
+    monday: formatDate(monday),
+    sunday: formatDate(sunday)
+  };
 }
 
 function getCurrentSeason() {
@@ -737,7 +817,9 @@ window.leaveGroup = leaveGroup;
 window.showTab = showTab;
 window.openModal = openModal;
 window.closeModal = closeModal;
+window.openAddDishModal = openAddDishModal;
 window.saveDish = saveDish;
 window.generateMenu = generateMenu;
+window.regenerateMenu = regenerateMenu;
 window.setMealDuration = setMealDuration;
 window.installApp = installApp;
