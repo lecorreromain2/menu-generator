@@ -454,58 +454,42 @@ function renderDishes() {
 function generateMenu(targetWeekNumber = null) {
   const currentSeason = getCurrentSeason();
   const recentlyUsed = getRecentlyUsedDishes();
-
-  // Si pas de numéro de semaine spécifié, générer pour la semaine prochaine
   const weekNumber = targetWeekNumber || (getWeekNumber(new Date()) + 1);
-
-  // Max apparitions par plat (1 ou 2) — fallback à 1 si absent
   const maxAppearances = Number.isInteger(menuConfig.maxAppearances) ? menuConfig.maxAppearances : 1;
 
-  // Construire le pool initial de plats utilisables (saison + non utilisés récemment)
-  let initialPool = dishes
+  // Durées des plats selon config
+  const lunchDuration = menuConfig?.mealDuration?.lunch || 1;
+  const dinnerDuration = menuConfig?.mealDuration?.dinner || 1;
+
+  // Filtrer plats valides (saisons, non récemment utilisés)
+  let pool = dishes
     .filter(d => {
       const hasSeasons = Array.isArray(d.seasons) && d.seasons.length > 0;
       const matchSeason = !hasSeasons || d.seasons.includes(currentSeason);
       return matchSeason && !recentlyUsed.has(d.id);
     })
-    .map(d => ({ ...d, remaining: maxAppearances })); // remaining = combien de fois il peut encore apparaitre cette semaine
+    .map(d => ({ ...d, remaining: maxAppearances }));
 
-  if (initialPool.length === 0) {
-    showToast('❌ Pas de plat disponible après filtrage par saison / récence.', 5000);
-    console.warn('Aucun plat en pool initial');
-    return;
-  }
-
-  // Il nous faut au moins 14 "occurrences" cumulées (somme des remaining) pour générer un menu complet
-  const totalOccurrences = initialPool.reduce((s, p) => s + p.remaining, 0);
-  if (totalOccurrences < 14) {
-    showToast(`❌ Pas assez de plats disponibles (occurrences totales : ${totalOccurrences} / 14)`, 6000);
-    console.warn('Pas assez d\'occurrences totales pour générer un menu', totalOccurrences);
+  if (pool.length === 0) {
+    showToast('❌ Aucun plat disponible selon la saison/config.', 5000);
     return;
   }
 
   const schedule = [];
-  // usedInMenu pour compter combien de fois un id a été utilisé dans ce menu (redondant avec remaining mais pratique)
   const usedInMenu = new Map();
-
-  // helper util : random parmi un tableau
   const pickRandom = arr => arr[Math.floor(Math.random() * arr.length)];
 
-  // helper : obtenir candidats à partir du pool avec contraintes
-  function getCandidates(pool, { excludeIds = new Set(), requireSport = false }) {
+  function getCandidates(requireSport = false, excludeIds = new Set()) {
     let candidates = pool.filter(p => p.remaining > 0 && !excludeIds.has(p.id));
     if (requireSport) {
       const sportCandidates = candidates.filter(p => p.sportDay);
       if (sportCandidates.length > 0) candidates = sportCandidates;
-      // sinon on laisse candidates tel quel (fallback)
     }
     return candidates;
   }
 
-  // helper : sélectionner un plat, décrémenter remaining, mettre à jour usedInMenu
-  function selectAndConsume(pool, candidate) {
+  function selectAndConsume(candidate) {
     if (!candidate) return null;
-    // trouver l'objet dans pool (par id)
     const obj = pool.find(p => p.id === candidate.id);
     if (!obj) return null;
     obj.remaining = Math.max(0, obj.remaining - 1);
@@ -513,104 +497,68 @@ function generateMenu(targetWeekNumber = null) {
     return { id: obj.id, name: obj.name, seasons: obj.seasons, sportDay: obj.sportDay, vegetarian: obj.vegetarian, grillades: obj.grillades };
   }
 
-  // Copie du pool qu'on manipule
-  const pool = initialPool;
+  let lunchRepeatCounter = 0;
+  let dinnerRepeatCounter = 0;
+  let lastLunch = null;
+  let lastDinner = null;
 
   for (let i = 0; i < 7; i++) {
     const day = daysOfWeek[i];
     const isSportDay = Array.isArray(menuConfig.sportDays) && menuConfig.sportDays.includes(day);
 
-    // --- DÉJEUNER ---
     let lunchDish = null;
+    let dinnerDish = null;
 
-    if (menuConfig.mealDuration && menuConfig.mealDuration.lunch === 2 && i > 0 && schedule[i - 1].lunch) {
-      // répéter le plat du jour précédent
-      lunchDish = schedule[i - 1].lunch;
-      // décrémenter le compteur pour ce plat si possible (si venant du pool original)
-      const objLunch = pool.find(p => p.id === lunchDish.id);
-      if (objLunch && objLunch.remaining > 0) {
-        objLunch.remaining -= 1;
-        usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
-      }
+    // === DÉJEUNER ===
+    if (lunchRepeatCounter > 0 && lastLunch) {
+      // répéter le même plat
+      lunchDish = lastLunch;
+      lunchRepeatCounter--;
     } else {
-      // Contraintes : sur les jours de sport, on **exige** sportDay **uniquement pour le déjeuner**
+      // choisir un nouveau plat
       const requireSport = !!isSportDay;
-
-      // Règle de priorité :
-      // 1) plats dans pool non encore utilisés cette semaine (usedInMenu === undefined)
-      // 2) si aucun, plats avec usedInMenu < maxAppearances
-      let candidates = getCandidates(pool, { excludeIds: new Set(), requireSport });
-
-      // priorité aux non-encore-utilisés
-      let preferred = candidates.filter(p => !usedInMenu.has(p.id));
-      if (preferred.length > 0) {
-        lunchDish = selectAndConsume(pool, pickRandom(preferred));
-      } else {
-        // fallback : autoriser ceux < maxAppearances
-        let allowed = candidates.filter(p => (usedInMenu.get(p.id) || 0) < maxAppearances);
-        if (allowed.length > 0) lunchDish = selectAndConsume(pool, pickRandom(allowed));
-        else {
-          // dernier recours : prendre n'importe quel candidat ayant remaining>0
-          if (candidates.length > 0) lunchDish = selectAndConsume(pool, pickRandom(candidates));
-          else lunchDish = null;
-        }
+      const candidates = getCandidates(requireSport);
+      if (candidates.length > 0) {
+        lunchDish = selectAndConsume(pickRandom(candidates));
+        lastLunch = lunchDish;
+        lunchRepeatCounter = lunchDuration - 1;
       }
     }
 
-    // --- DÎNER ---
-    let dinnerDish = null;
-
-    if (menuConfig.mealDuration && menuConfig.mealDuration.dinner === 2 && i > 0 && schedule[i - 1].dinner) {
-      dinnerDish = schedule[i - 1].dinner;
-      const objDinner = pool.find(p => p.id === dinnerDish.id);
-      if (objDinner && objDinner.remaining > 0) {
-        objDinner.remaining -= 1;
-        usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
-      }
+    // === DÎNER ===
+    if (dinnerRepeatCounter > 0 && lastDinner) {
+      dinnerDish = lastDinner;
+      dinnerRepeatCounter--;
     } else {
-      // Exclure le même plat que le déjeuner du même jour
       const exclude = new Set();
       if (lunchDish) exclude.add(lunchDish.id);
-
-      // IMPORTANT : **Ne pas exiger sportDay pour le dîner** (c'est la demande)
-      const requireSportForDinner = false;
-
-      let candidates = getCandidates(pool, { excludeIds: exclude, requireSport: requireSportForDinner });
-
-      // priorité aux non-encore-utilisés
-      let preferred = candidates.filter(p => !usedInMenu.has(p.id));
-      if (preferred.length > 0) {
-        dinnerDish = selectAndConsume(pool, pickRandom(preferred));
-      } else {
-        let allowed = candidates.filter(p => (usedInMenu.get(p.id) || 0) < maxAppearances);
-        if (allowed.length > 0) dinnerDish = selectAndConsume(pool, pickRandom(allowed));
-        else {
-          if (candidates.length > 0) dinnerDish = selectAndConsume(pool, pickRandom(candidates));
-          else dinnerDish = null;
-        }
+      const candidates = getCandidates(false, exclude);
+      if (candidates.length > 0) {
+        dinnerDish = selectAndConsume(pickRandom(candidates));
+        lastDinner = dinnerDish;
+        dinnerRepeatCounter = dinnerDuration - 1;
       }
     }
 
     schedule.push({ day, lunch: lunchDish, dinner: dinnerDish, isSportDay });
   }
 
-  // Construire l'objet menu (dates calculées)
-  const weekDates = getWeekDates(weekNumber); // utilise ta fonction getWeekDates si présente
+  // === Sauvegarde du menu ===
+  const weekDates = getWeekDates(weekNumber);
   const newMenu = {
     id: Date.now(),
-    weekNumber: weekNumber,
-    startDate: weekDates ? weekDates.monday : null,
-    endDate: weekDates ? weekDates.sunday : null,
+    weekNumber,
+    startDate: weekDates?.monday || null,
+    endDate: weekDates?.sunday || null,
     schedule
   };
 
   updateSyncIcon(true);
   database.ref(`groups/${groupId}/menus/${newMenu.id}`).set(newMenu);
   showToast('✅ Menu généré !');
-
-  // aller à l'onglet menus
   showTab('menus');
 }
+
 
 
 function regenerateMenu(menuId, weekNumber) {
