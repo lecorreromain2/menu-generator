@@ -458,90 +458,149 @@ function generateMenu(targetWeekNumber = null) {
   // Si pas de numéro de semaine spécifié, générer pour la semaine prochaine
   const weekNumber = targetWeekNumber || (getWeekNumber(new Date()) + 1);
 
-  // Défaut max apparitions par plat (1 ou 2) — utilise menuConfig.maxAppearances si défini
+  // Max apparitions par plat (1 ou 2) — fallback à 1 si absent
   const maxAppearances = Number.isInteger(menuConfig.maxAppearances) ? menuConfig.maxAppearances : 1;
 
-  // Filtrer les plats disponibles (saisons + non utilisés récemment)
-  const availableDishes = dishes.filter(d => {
-    const hasSeasons = Array.isArray(d.seasons) && d.seasons.length > 0;
-    const matchSeason = !hasSeasons || d.seasons.includes(currentSeason);
-    return !recentlyUsed.has(d.id) && matchSeason;
-  });
+  // Construire le pool initial de plats utilisables (saison + non utilisés récemment)
+  let initialPool = dishes
+    .filter(d => {
+      const hasSeasons = Array.isArray(d.seasons) && d.seasons.length > 0;
+      const matchSeason = !hasSeasons || d.seasons.includes(currentSeason);
+      return matchSeason && !recentlyUsed.has(d.id);
+    })
+    .map(d => ({ ...d, remaining: maxAppearances })); // remaining = combien de fois il peut encore apparaitre cette semaine
 
-  if (availableDishes.length < 14) {
-    showToast('❌ Pas assez de plats disponibles !', 5000);
-    console.warn('Génération annulée — plats disponibles:', availableDishes.length);
+  if (initialPool.length === 0) {
+    showToast('❌ Pas de plat disponible après filtrage par saison / récence.', 5000);
+    console.warn('Aucun plat en pool initial');
+    return;
+  }
+
+  // Il nous faut au moins 14 "occurrences" cumulées (somme des remaining) pour générer un menu complet
+  const totalOccurrences = initialPool.reduce((s, p) => s + p.remaining, 0);
+  if (totalOccurrences < 14) {
+    showToast(`❌ Pas assez de plats disponibles (occurrences totales : ${totalOccurrences} / 14)`, 6000);
+    console.warn('Pas assez d\'occurrences totales pour générer un menu', totalOccurrences);
     return;
   }
 
   const schedule = [];
-  const usedInMenu = new Map(); // map dishId -> count in this menu
+  // usedInMenu pour compter combien de fois un id a été utilisé dans ce menu (redondant avec remaining mais pratique)
+  const usedInMenu = new Map();
 
-  // Helper : choisir un plat selon contraintes
-  function pickDish({ excludeIds = new Set(), requireSport = false }) {
-    // 1) candidats qui respectent sport (si required) ou all
-    let candidates = availableDishes.filter(d => !excludeIds.has(d.id));
+  // helper util : random parmi un tableau
+  const pickRandom = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // helper : obtenir candidats à partir du pool avec contraintes
+  function getCandidates(pool, { excludeIds = new Set(), requireSport = false }) {
+    let candidates = pool.filter(p => p.remaining > 0 && !excludeIds.has(p.id));
     if (requireSport) {
-      const sportCandidates = candidates.filter(d => d.sportDay);
+      const sportCandidates = candidates.filter(p => p.sportDay);
       if (sportCandidates.length > 0) candidates = sportCandidates;
-      // otherwise keep original candidates as fallback
+      // sinon on laisse candidates tel quel (fallback)
     }
-
-    // prefer dishes that haven't been used in this menu yet
-    let preferred = candidates.filter(d => !usedInMenu.has(d.id));
-    if (preferred.length > 0) return preferred[Math.floor(Math.random() * preferred.length)];
-
-    // then prefer dishes used < maxAppearances
-    let allowed = candidates.filter(d => (usedInMenu.get(d.id) || 0) < maxAppearances);
-    if (allowed.length > 0) return allowed[Math.floor(Math.random() * allowed.length)];
-
-    // no candidate (shouldn't happen if availableDishes abundant) -> null
-    return null;
+    return candidates;
   }
+
+  // helper : sélectionner un plat, décrémenter remaining, mettre à jour usedInMenu
+  function selectAndConsume(pool, candidate) {
+    if (!candidate) return null;
+    // trouver l'objet dans pool (par id)
+    const obj = pool.find(p => p.id === candidate.id);
+    if (!obj) return null;
+    obj.remaining = Math.max(0, obj.remaining - 1);
+    usedInMenu.set(obj.id, (usedInMenu.get(obj.id) || 0) + 1);
+    return { id: obj.id, name: obj.name, seasons: obj.seasons, sportDay: obj.sportDay, vegetarian: obj.vegetarian, grillades: obj.grillades };
+  }
+
+  // Copie du pool qu'on manipule
+  const pool = initialPool;
 
   for (let i = 0; i < 7; i++) {
     const day = daysOfWeek[i];
     const isSportDay = Array.isArray(menuConfig.sportDays) && menuConfig.sportDays.includes(day);
 
-    // === DÉJEUNER ===
+    // --- DÉJEUNER ---
     let lunchDish = null;
+
     if (menuConfig.mealDuration && menuConfig.mealDuration.lunch === 2 && i > 0 && schedule[i - 1].lunch) {
       // répéter le plat du jour précédent
       lunchDish = schedule[i - 1].lunch;
-      usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
+      // décrémenter le compteur pour ce plat si possible (si venant du pool original)
+      const objLunch = pool.find(p => p.id === lunchDish.id);
+      if (objLunch && objLunch.remaining > 0) {
+        objLunch.remaining -= 1;
+        usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
+      }
     } else {
-      const exclude = new Set();
+      // Contraintes : sur les jours de sport, on **exige** sportDay **uniquement pour le déjeuner**
       const requireSport = !!isSportDay;
-      lunchDish = pickDish({ excludeIds: exclude, requireSport });
-      if (lunchDish) usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
+
+      // Règle de priorité :
+      // 1) plats dans pool non encore utilisés cette semaine (usedInMenu === undefined)
+      // 2) si aucun, plats avec usedInMenu < maxAppearances
+      let candidates = getCandidates(pool, { excludeIds: new Set(), requireSport });
+
+      // priorité aux non-encore-utilisés
+      let preferred = candidates.filter(p => !usedInMenu.has(p.id));
+      if (preferred.length > 0) {
+        lunchDish = selectAndConsume(pool, pickRandom(preferred));
+      } else {
+        // fallback : autoriser ceux < maxAppearances
+        let allowed = candidates.filter(p => (usedInMenu.get(p.id) || 0) < maxAppearances);
+        if (allowed.length > 0) lunchDish = selectAndConsume(pool, pickRandom(allowed));
+        else {
+          // dernier recours : prendre n'importe quel candidat ayant remaining>0
+          if (candidates.length > 0) lunchDish = selectAndConsume(pool, pickRandom(candidates));
+          else lunchDish = null;
+        }
+      }
     }
 
-    // === DÎNER ===
+    // --- DÎNER ---
     let dinnerDish = null;
+
     if (menuConfig.mealDuration && menuConfig.mealDuration.dinner === 2 && i > 0 && schedule[i - 1].dinner) {
       dinnerDish = schedule[i - 1].dinner;
-      usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
+      const objDinner = pool.find(p => p.id === dinnerDish.id);
+      if (objDinner && objDinner.remaining > 0) {
+        objDinner.remaining -= 1;
+        usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
+      }
     } else {
-      // Exclure le même plat que le déjeuner du jour
+      // Exclure le même plat que le déjeuner du même jour
       const exclude = new Set();
       if (lunchDish) exclude.add(lunchDish.id);
-      const requireSport = !!isSportDay;
-      dinnerDish = pickDish({ excludeIds: exclude, requireSport });
-      // If none found with sport requirement, fallback to not requiring sport (handled in pickDish)
-      if (dinnerDish) usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
+
+      // IMPORTANT : **Ne pas exiger sportDay pour le dîner** (c'est la demande)
+      const requireSportForDinner = false;
+
+      let candidates = getCandidates(pool, { excludeIds: exclude, requireSport: requireSportForDinner });
+
+      // priorité aux non-encore-utilisés
+      let preferred = candidates.filter(p => !usedInMenu.has(p.id));
+      if (preferred.length > 0) {
+        dinnerDish = selectAndConsume(pool, pickRandom(preferred));
+      } else {
+        let allowed = candidates.filter(p => (usedInMenu.get(p.id) || 0) < maxAppearances);
+        if (allowed.length > 0) dinnerDish = selectAndConsume(pool, pickRandom(allowed));
+        else {
+          if (candidates.length > 0) dinnerDish = selectAndConsume(pool, pickRandom(candidates));
+          else dinnerDish = null;
+        }
+      }
     }
 
     schedule.push({ day, lunch: lunchDish, dinner: dinnerDish, isSportDay });
   }
 
-  // Calculer les dates du lundi et dimanche de la semaine
-  const weekDates = getWeekDates(weekNumber);
-
+  // Construire l'objet menu (dates calculées)
+  const weekDates = getWeekDates(weekNumber); // utilise ta fonction getWeekDates si présente
   const newMenu = {
     id: Date.now(),
     weekNumber: weekNumber,
-    startDate: weekDates.monday,
-    endDate: weekDates.sunday,
+    startDate: weekDates ? weekDates.monday : null,
+    endDate: weekDates ? weekDates.sunday : null,
     schedule
   };
 
@@ -549,7 +608,7 @@ function generateMenu(targetWeekNumber = null) {
   database.ref(`groups/${groupId}/menus/${newMenu.id}`).set(newMenu);
   showToast('✅ Menu généré !');
 
-  // basculer sur l'onglet menus
+  // aller à l'onglet menus
   showTab('menus');
 }
 
