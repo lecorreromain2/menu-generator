@@ -228,17 +228,14 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
-  color: var(--md-primary);
+  color: var(--md-on-surface-variant);
   border-radius: 50%;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 4px;
+  transition: background-color 0.2s;
 }
 
 .icon-btn:hover {
-  background: var(--md-primary-container);
+  background-color: rgba(0,0,0,0.1);
 }
 
 .icon-btn .material-icons {
@@ -666,5 +663,7 @@ body {
 
 .toggle-icon {
   font-size: 24px;
+  cursor: pointer;
+  user-select: none;
   color: var(--md-on-surface-variant);
 }
