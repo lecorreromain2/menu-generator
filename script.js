@@ -598,16 +598,26 @@ function renderMenus() {
     const contentId = `menu-content-${menu.id}`;
 
     menuCard.innerHTML = `
-      <div class="menu-header" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;" 
-           onclick="toggleMenuContent('${contentId}')">
-        <div style="display:flex; align-items:center; gap:8px;">
+      <div class="menu-header" style="display:flex; align-items:center; justify-content:space-between;">
+        <div onclick="toggleMenuContent('${contentId}')" 
+             style="display:flex; align-items:center; gap:8px; cursor:pointer; flex:1;">
           <span class="material-icons">calendar_today</span>
           <div>
             <div><strong>Semaine ${displayedWeek}</strong></div>
             <div style="font-size:12px; color:var(--md-on-surface-variant);">${dateRange}</div>
           </div>
         </div>
-        <span class="material-icons toggle-icon" id="icon-${contentId}">${isLatest ? 'expand_less' : 'expand_more'}</span>
+
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button class="icon-btn" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber}); event.stopPropagation();" 
+                  title="Régénérer ce menu">
+            <span class="material-icons">refresh</span>
+          </button>
+          <span class="material-icons toggle-icon" id="icon-${contentId}" 
+                onclick="toggleMenuContent('${contentId}'); event.stopPropagation();">
+            ${isLatest ? 'expand_less' : 'expand_more'}
+          </span>
+        </div>
       </div>
 
       <div id="${contentId}" class="menu-content" style="margin-top:10px; display:${isLatest ? 'block' : 'none'};">
@@ -618,6 +628,7 @@ function renderMenus() {
     container.appendChild(menuCard);
   });
 }
+
 
 // === Fonction utilitaire pour générer le HTML des jours ===
 function renderMenuSchedule(schedule) {
