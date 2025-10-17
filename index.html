@@ -78,7 +78,7 @@
     <div id="mainApp" class="hidden">
       <!-- Action Buttons -->
       <div class="button-grid">
-        <button class="btn btn-filled-tonal" onclick="openModal('addDishModal')">
+        <button class="btn btn-filled-tonal" onclick="openAddDishModal()">
           <span class="material-icons">add</span>
           Ajouter
         </button>
@@ -168,7 +168,7 @@
       </div>
 
       <div class="modal-buttons">
-        <button class="btn btn-text" onclick="closeModal('addDishModal')">Annuler</button>
+        <button class="btn btn-text" onclick="resetDishForm(); closeModal('addDishModal')">Annuler</button>
         <button class="btn btn-filled" onclick="saveDish()" id="saveDishBtn">Ajouter</button>
       </div>
     </div>
