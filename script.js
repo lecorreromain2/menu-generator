@@ -399,17 +399,23 @@ function deleteDish(id) {
 
 function renderDishes(dishes = []) {
   const container = document.getElementById('dishesContainer');
-  if (!container) {
-    console.error('❌ Impossible de trouver #dishesContainer');
-    return;
-  }
+  const listCard = document.getElementById('dishesList');
+  const emptyState = document.getElementById('noDishes');
+  const countSpan = document.getElementById('dishCount');
+
+  if (!container) return;
 
   container.innerHTML = '';
 
   if (!dishes.length) {
-    container.innerHTML = "<p class='empty'>Aucune recette disponible pour ce groupe.</p>";
+    listCard?.classList.add('hidden');
+    emptyState?.classList.remove('hidden');
+    if (countSpan) countSpan.textContent = '0';
     return;
   }
+
+  emptyState?.classList.add('hidden');
+  listCard?.classList.remove('hidden');
 
   dishes.forEach(dish => {
     const card = document.createElement('div');
@@ -422,14 +428,16 @@ function renderDishes(dishes = []) {
         ${dish.grillades ? '<p>🔥 Grillades</p>' : ''}
       </div>
       <div class="dish-actions">
-        <button class="btn btn-text" onclick="openEditDishModal(${JSON.stringify(dish).replace(/"/g, '&quot;')})">Modifier</button>
+        <button class="btn btn-text" onclick='openEditDishModal(${JSON.stringify(dish).replace(/"/g, "&quot;")})'>Modifier</button>
       </div>
     `;
     container.appendChild(card);
   });
 
+  if (countSpan) countSpan.textContent = dishes.length.toString();
   console.log(`🎨 ${dishes.length} recettes affichées`);
 }
+
 
 
 // ===== MENU =====
@@ -770,27 +778,19 @@ window.onload = function() {
 };
 
 function showTab(tabName) {
-  console.log('🔁 Affichage onglet :', tabName);
+  console.log('🔁 Changement d’onglet :', tabName);
 
-  // Masquer tous les contenus
-  document.querySelectorAll('.tab-content').forEach(tab => {
-    tab.style.display = 'none';
-  });
+  // Cacher tout
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
-  // Retirer la classe active sur tous les boutons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
+  // Afficher le bon onglet (supporte id="dishesTab", "menusTab", "configTab")
+  const activeTab = document.getElementById(`${tabName}Tab`) || document.getElementById(tabName);
+  if (activeTab) activeTab.classList.remove('hidden');
 
-  // Afficher le bon contenu
-  const activeTab = document.getElementById(tabName);
-  if (activeTab) activeTab.style.display = 'block';
-
-  // Activer le bon bouton
   const activeBtn = document.querySelector(`[onclick="showTab('${tabName}')"]`);
   if (activeBtn) activeBtn.classList.add('active');
 }
-
 
 window.onload = () => {
   console.log('✅ Initialisation interface');
