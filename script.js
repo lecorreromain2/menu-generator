@@ -804,7 +804,7 @@ window.onload = () => {
 };
 
 window.addEventListener('load', () => {
-  showTab('dishes'); // active l’onglet recettes
+  showTab('dishes'); // active l’onglet "recettes" par défaut
 });
 
 
