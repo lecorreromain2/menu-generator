@@ -228,14 +228,17 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--md-on-surface-variant);
+  padding: 8px;
+  color: var(--md-primary);
   border-radius: 50%;
-  padding: 4px;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .icon-btn:hover {
-  background-color: rgba(0,0,0,0.1);
+  background: var(--md-primary-container);
 }
 
 .icon-btn .material-icons {
@@ -600,6 +603,157 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--md-surface);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--md-on-surface-variant);
+  transition: color 0.2s;
+  border-radius: 12px;
+  min-width: 80px;
+}
+
+.nav-item:hover {
+  background: rgba(103, 80, 164, 0.08);
+}
+
+.nav-item.active {
+  color: var(--md-primary);
+  background: var(--md-primary-container);
+}
+
+.nav-item .material-icons {
+  font-size: 24px;
+}
+
+.nav-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Main Tabs */
+.main-tab {
+  display: none;
+  padding-bottom: 80px;
+  min-height: calc(100vh - 200px);
+}
+
+.main-tab.active {
+  display: block;
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 99;
+}
+
+.fab:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25), 0 3px 6px rgba(0, 0, 0, 0.18);
+  transform: scale(1.05);
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+.fab .material-icons {
+  font-size: 24px;
+}
+
+/* Settings Menu */
+.settings-menu {
+  background: var(--md-surface);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid var(--md-outline);
+}
+
+.settings-item:last-child {
+  border-bottom: none;
+}
+
+.settings-item:hover {
+  background: var(--md-surface-variant);
+}
+
+.settings-item-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.settings-item-content .material-icons {
+  color: var(--md-on-surface-variant);
+  font-size: 24px;
+}
+
+.settings-item-title {
+  font-weight: 500;
+  color: var(--md-on-surface);
+  font-size: 16px;
+  text-align: left;
+}
+
+.settings-item-subtitle {
+  font-size: 12px;
+  color: var(--md-on-surface-variant);
+  margin-top: 2px;
+  text-align: left;
+}
+
+.settings-item > .material-icons {
+  color: var(--md-on-surface-variant);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .title {
@@ -612,10 +766,15 @@ body {
 
   body {
     padding: 8px;
+    padding-bottom: 80px;
   }
 
   .header {
     padding: 16px;
+  }
+
+  .fab {
+    bottom: 90px;
   }
 }
 
@@ -636,34 +795,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--md-on-surface-variant);
-}
-
-.tooltip {
-  position: absolute;
-  background: #333;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  pointer-events: none;
-  transform: translate(-50%, -120%);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  z-index: 999;
-}
-.tooltip.show {
-  opacity: 1;
-}
-
-.menu-header:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  transition: background-color 0.2s;
-}
-
-.toggle-icon {
-  font-size: 24px;
-  cursor: pointer;
-  user-select: none;
-  color: var(--md-on-surface-variant);
 }
