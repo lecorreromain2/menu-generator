@@ -821,6 +821,29 @@ window.onload = function() {
   setupPWA();
 };
 
+function showTab(tabName) {
+  console.log('🔁 Affichage onglet :', tabName);
+
+  // Masquer tous les contenus
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.style.display = 'none';
+  });
+
+  // Retirer la classe active sur tous les boutons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  // Afficher le bon contenu
+  const activeTab = document.getElementById(tabName);
+  if (activeTab) activeTab.style.display = 'block';
+
+  // Activer le bon bouton
+  const activeBtn = document.querySelector(`[onclick="showTab('${tabName}')"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+
 window.onload = () => {
   console.log('✅ Initialisation interface');
 
