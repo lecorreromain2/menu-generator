@@ -184,7 +184,7 @@ function updateMenusTab() {
     if (empty) empty.style.display = 'flex';
   }
 }
-
+ 
 // ===== FIREBASE =====
 
 function listenToFirebase() {
