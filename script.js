@@ -420,11 +420,13 @@ function saveDish() {
   const message = editingDishId ? '✅ Plat modifié !' : '✅ Plat ajouté !';
   showToast(message);
   
-closeModal('addDishModal');
+// ✅ Réinitialise et ferme la modale après ajout/modif
+resetDishForm();
+closeModal('addDishModal');;
 
   // 🧹 Nettoyage complet après ajout ou modification
 editingDishId = null;
-selectedSeasons = [];
+newDishSeasons = [];
 
 const nameInput = document.getElementById('dishName');
 const sportDay = document.getElementById('sportDay');
@@ -445,6 +447,30 @@ function deleteDish(id) {
     database.ref(`groups/${groupId}/dishes/${id}`).remove();
     showToast('✅ Plat supprimé');
   }
+}
+
+// Réinitialise complètement le formulaire d'ajout/édition de plat
+function resetDishForm() {
+  editingDishId = null;
+  newDishSeasons = []; // ou selectedSeasons si tu utilises ce nom ailleurs
+
+  const nameInput = document.getElementById('dishName');
+  const sportDay = document.getElementById('sportDay');
+  const vegetarian = document.getElementById('vegetarian');
+  const grillades = document.getElementById('grillades');
+  const chips = document.querySelectorAll('#seasonsChips .chip');
+
+  if (nameInput) nameInput.value = '';
+  if (sportDay) sportDay.checked = false;
+  if (vegetarian) vegetarian.checked = false;
+  if (grillades) grillades.checked = false;
+  if (chips) chips.forEach(chip => chip.classList.remove('selected'));
+
+  // Mettre à jour le titre / bouton si nécessaire
+  const title = document.getElementById('dishModalTitle');
+  const saveBtn = document.getElementById('saveDishBtn');
+  if (title) title.textContent = 'Nouveau plat';
+  if (saveBtn) saveBtn.textContent = 'Ajouter';
 }
 
 function renderDishes() {
