@@ -325,17 +325,31 @@ function toggleSeasonChip(season, chip) {
 }
 
 function openAddDishModal() {
+  // 🔄 Réinitialisation complète
   editingDishId = null;
+  newDishSeasons = [];
+
+  // Réinitialiser tous les champs du formulaire
+  const nameInput = document.getElementById('dishName');
+  const chips = document.querySelectorAll('#seasonsChips .chip');
+  const sportDay = document.getElementById('sportDay');
+  const vegetarian = document.getElementById('vegetarian');
+  const grillades = document.getElementById('grillades');
+
+  if (nameInput) nameInput.value = '';
+  if (chips) chips.forEach(chip => chip.classList.remove('selected'));
+  if (sportDay) sportDay.checked = false;
+  if (vegetarian) vegetarian.checked = false;
+  if (grillades) grillades.checked = false;
+
+  // Mettre à jour le titre et le bouton
   document.getElementById('dishModalTitle').textContent = 'Nouveau plat';
   document.getElementById('saveDishBtn').textContent = 'Ajouter';
-  document.getElementById('dishName').value = '';
-  newDishSeasons = [];
-  document.querySelectorAll('#seasonsChips .chip').forEach(chip => chip.classList.remove('selected'));
-  document.getElementById('sportDay').checked = false;
-  document.getElementById('vegetarian').checked = false;
-  document.getElementById('grillades').checked = false;
+
+  // ✅ Ouvrir la modale vide
   openModal('addDishModal');
 }
+
 
 function openEditDishModal(dish) {
   editingDishId = dish.id;
@@ -380,11 +394,16 @@ function saveDish() {
   const message = editingDishId ? '✅ Plat modifié !' : '✅ Plat ajouté !';
   showToast(message);
   
-  // ✅ Réinitialiser le formulaire
-  editingDishId = null;
-  newDishSeasons = [];
-  
-  closeModal('addDishModal');
+// ✅ Réinitialiser complètement le formulaire après ajout ou modif
+editingDishId = null;
+newDishSeasons = [];
+document.getElementById('dishName').value = '';
+document.querySelectorAll('#seasonsChips .chip').forEach(chip => chip.classList.remove('selected'));
+document.getElementById('sportDay').checked = false;
+document.getElementById('vegetarian').checked = false;
+document.getElementById('grillades').checked = false;
+
+closeModal('addDishModal');
 }
 
 function deleteDish(id) {
