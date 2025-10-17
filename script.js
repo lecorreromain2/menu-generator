@@ -325,46 +325,72 @@ function toggleSeasonChip(season, chip) {
 }
 
 function openAddDishModal() {
-  // 🔄 Réinitialisation complète
+  console.log('🆕 Ouverture du formulaire d’ajout');
+
+  // Réinitialiser le mode édition
   editingDishId = null;
-  newDishSeasons = [];
+  selectedSeasons = []; // très important, car c’est elle qui conserve les anciennes saisons
 
   // Réinitialiser tous les champs du formulaire
   const nameInput = document.getElementById('dishName');
-  const chips = document.querySelectorAll('#seasonsChips .chip');
   const sportDay = document.getElementById('sportDay');
   const vegetarian = document.getElementById('vegetarian');
   const grillades = document.getElementById('grillades');
+  const chips = document.querySelectorAll('#seasonsChips .chip');
 
   if (nameInput) nameInput.value = '';
-  if (chips) chips.forEach(chip => chip.classList.remove('selected'));
   if (sportDay) sportDay.checked = false;
   if (vegetarian) vegetarian.checked = false;
   if (grillades) grillades.checked = false;
+  if (chips) chips.forEach(chip => chip.classList.remove('selected'));
 
-  // Mettre à jour le titre et le bouton
-  document.getElementById('dishModalTitle').textContent = 'Nouveau plat';
-  document.getElementById('saveDishBtn').textContent = 'Ajouter';
+  // Mettre à jour les libellés
+  const title = document.getElementById('dishModalTitle');
+  const saveBtn = document.getElementById('saveDishBtn');
+  if (title) title.textContent = 'Nouveau plat';
+  if (saveBtn) saveBtn.textContent = 'Ajouter';
 
-  // ✅ Ouvrir la modale vide
+  // ✅ Ouvrir la modale propre
   openModal('addDishModal');
 }
+
 
 
 function openEditDishModal(dish) {
+  console.log('✏️ Modification du plat :', dish.name);
   editingDishId = dish.id;
-  document.getElementById('dishModalTitle').textContent = 'Modifier le plat';
-  document.getElementById('saveDishBtn').textContent = 'Modifier';
-  document.getElementById('dishName').value = dish.name;
-  newDishSeasons = [...dish.seasons];
-  document.querySelectorAll('#seasonsChips .chip').forEach(chip => {
-    chip.classList.toggle('selected', newDishSeasons.includes(chip.textContent));
-  });
-  document.getElementById('sportDay').checked = dish.sportDay || false;
-  document.getElementById('vegetarian').checked = dish.vegetarian || false;
-  document.getElementById('grillades').checked = dish.grillades || false;
+
+  const nameInput = document.getElementById('dishName');
+  const sportDay = document.getElementById('sportDay');
+  const vegetarian = document.getElementById('vegetarian');
+  const grillades = document.getElementById('grillades');
+  const chips = document.querySelectorAll('#seasonsChips .chip');
+
+  if (nameInput) nameInput.value = dish.name || '';
+  if (sportDay) sportDay.checked = !!dish.sportDay;
+  if (vegetarian) vegetarian.checked = !!dish.vegetarian;
+  if (grillades) grillades.checked = !!dish.grillades;
+
+  selectedSeasons = Array.isArray(dish.seasons) ? [...dish.seasons] : [];
+
+  if (chips) {
+    chips.forEach(chip => {
+      if (selectedSeasons.includes(chip.dataset.value)) {
+        chip.classList.add('selected');
+      } else {
+        chip.classList.remove('selected');
+      }
+    });
+  }
+
+  const title = document.getElementById('dishModalTitle');
+  const saveBtn = document.getElementById('saveDishBtn');
+  if (title) title.textContent = 'Modifier le plat';
+  if (saveBtn) saveBtn.textContent = 'Mettre à jour';
+
   openModal('addDishModal');
 }
+
 
 function saveDish() {
   const name = document.getElementById('dishName').value.trim();
@@ -790,6 +816,28 @@ function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove('active');
 }
+
+// Réinitialisation complète du formulaire à la fermeture de la modale d’ajout/édition
+function resetDishForm() {
+  editingDishId = null;
+  selectedSeasons = [];
+
+  const nameInput = document.getElementById('dishName');
+  const sportDay = document.getElementById('sportDay');
+  const vegetarian = document.getElementById('vegetarian');
+  const grillades = document.getElementById('grillades');
+  const chips = document.querySelectorAll('#seasonsChips .chip');
+
+  if (nameInput) nameInput.value = '';
+  if (sportDay) sportDay.checked = false;
+  if (vegetarian) vegetarian.checked = false;
+  if (grillades) grillades.checked = false;
+  if (chips) chips.forEach(chip => chip.classList.remove('selected'));
+}
+
+// Lorsqu’on ferme la modale manuellement, on nettoie aussi le formulaire
+document.getElementById('addDishModal').addEventListener('close', resetDishForm);
+
 
 // ===== PWA =====
 
