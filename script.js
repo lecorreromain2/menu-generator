@@ -821,6 +821,18 @@ window.onload = function() {
   setupPWA();
 };
 
+window.onload = () => {
+  console.log('✅ Initialisation interface');
+
+  // Afficher la tab bar
+  const tabBar = document.getElementById('tabBar');
+  if (tabBar) tabBar.style.display = 'flex';
+
+  // Montrer l'onglet "Recettes" par défaut
+  showTab('dishes');
+};
+
+
 // Exposer les fonctions globalement pour les onclick HTML
 window.showGroupTypeSelection = showGroupTypeSelection;
 window.showCreateGroup = showCreateGroup;
