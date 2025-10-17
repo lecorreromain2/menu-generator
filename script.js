@@ -114,13 +114,8 @@ function showMainApp() {
   
   document.getElementById('currentGroupId').textContent = groupId;
   
-  // Afficher l'onglet dishes par défaut
-  document.getElementById('dishesTab').classList.add('active');
-  const firstTabBtn = document.querySelector('.tab-btn');
-  if (firstTabBtn) {
-    firstTabBtn.classList.add('active');
-  }
-  updateDishesTab();
+  // Afficher l'onglet recettes par défaut
+  switchTab('recipes');
 }
 
 function leaveGroup() {
@@ -132,23 +127,33 @@ function leaveGroup() {
 
 // ===== ONGLETS =====
 
-function showTab(tabName, event) {
-  console.log('📂 Affichage onglet:', tabName);
+function switchTab(tabName) {
+  console.log('📂 Changement d\'onglet:', tabName);
   
-  document.getElementById('dishesTab').classList.remove('active');
-  document.getElementById('menusTab').classList.remove('active');
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  // Masquer tous les onglets
+  document.querySelectorAll('.main-tab').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
   
-  const tabEl = document.getElementById(tabName + 'Tab');
+  // Afficher l'onglet sélectionné
+  const tabMap = {
+    'recipes': 'recipesTab',
+    'menus': 'menusTab',
+    'settings': 'settingsTab'
+  };
+  
+  const tabEl = document.getElementById(tabMap[tabName]);
   if (tabEl) {
     tabEl.classList.add('active');
   }
-
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add('active');
+  
+  // Activer le bouton de navigation
+  const navBtn = document.querySelector(`[data-tab="${tabName}"]`);
+  if (navBtn) {
+    navBtn.classList.add('active');
   }
-
-  if (tabName === 'dishes') {
+  
+  // Mettre à jour l'affichage selon l'onglet
+  if (tabName === 'recipes') {
     updateDishesTab();
   } else if (tabName === 'menus') {
     updateMenusTab();
@@ -170,15 +175,12 @@ function updateDishesTab() {
 }
 
 function updateMenusTab() {
-  const list = document.getElementById('menusListContainer');
   const empty = document.getElementById('noMenus');
   const hasItems = document.querySelectorAll('#menusList .card').length > 0;
 
   if (hasItems) {
-    if (list) list.style.display = 'block';
     if (empty) empty.style.display = 'none';
   } else {
-    if (list) list.style.display = 'none';
     if (empty) empty.style.display = 'flex';
   }
 }
@@ -325,72 +327,32 @@ function toggleSeasonChip(season, chip) {
 }
 
 function openAddDishModal() {
-  console.log('🆕 Nouveau plat — réinitialisation complète du formulaire');
-
-  // On vide complètement l’état global
   editingDishId = null;
-  selectedSeasons = [];
-
-  // Réinitialiser les champs
-  const nameInput = document.getElementById('dishName');
-  const sportDay = document.getElementById('sportDay');
-  const vegetarian = document.getElementById('vegetarian');
-  const grillades = document.getElementById('grillades');
-  const chips = document.querySelectorAll('#seasonsChips .chip');
-
-  if (nameInput) nameInput.value = '';
-  if (sportDay) sportDay.checked = false;
-  if (vegetarian) vegetarian.checked = false;
-  if (grillades) grillades.checked = false;
-  if (chips) chips.forEach(chip => chip.classList.remove('selected'));
-
-  // Mettre à jour les libellés
-  const title = document.getElementById('dishModalTitle');
-  const saveBtn = document.getElementById('saveDishBtn');
-  if (title) title.textContent = 'Nouveau plat';
-  if (saveBtn) saveBtn.textContent = 'Ajouter';
-
-  // Ouvrir la modale
+  document.getElementById('dishModalTitle').textContent = 'Nouveau plat';
+  document.getElementById('saveDishBtn').textContent = 'Ajouter';
+  document.getElementById('dishName').value = '';
+  newDishSeasons = [];
+  document.querySelectorAll('#seasonsChips .chip').forEach(chip => chip.classList.remove('selected'));
+  document.getElementById('sportDay').checked = false;
+  document.getElementById('vegetarian').checked = false;
+  document.getElementById('grillades').checked = false;
   openModal('addDishModal');
 }
 
 function openEditDishModal(dish) {
-  console.log('✏️ Modification du plat :', dish.name);
-
   editingDishId = dish.id;
-  selectedSeasons = Array.isArray(dish.seasons) ? [...dish.seasons] : [];
-
-  const nameInput = document.getElementById('dishName');
-  const sportDay = document.getElementById('sportDay');
-  const vegetarian = document.getElementById('vegetarian');
-  const grillades = document.getElementById('grillades');
-  const chips = document.querySelectorAll('#seasonsChips .chip');
-
-  if (nameInput) nameInput.value = dish.name || '';
-  if (sportDay) sportDay.checked = !!dish.sportDay;
-  if (vegetarian) vegetarian.checked = !!dish.vegetarian;
-  if (grillades) grillades.checked = !!dish.grillades;
-
-  if (chips) {
-    chips.forEach(chip => {
-      const value = chip.dataset.value;
-      if (selectedSeasons.includes(value)) {
-        chip.classList.add('selected');
-      } else {
-        chip.classList.remove('selected');
-      }
-    });
-  }
-
-  const title = document.getElementById('dishModalTitle');
-  const saveBtn = document.getElementById('saveDishBtn');
-  if (title) title.textContent = 'Modifier le plat';
-  if (saveBtn) saveBtn.textContent = 'Mettre à jour';
-
+  document.getElementById('dishModalTitle').textContent = 'Modifier le plat';
+  document.getElementById('saveDishBtn').textContent = 'Modifier';
+  document.getElementById('dishName').value = dish.name;
+  newDishSeasons = [...dish.seasons];
+  document.querySelectorAll('#seasonsChips .chip').forEach(chip => {
+    chip.classList.toggle('selected', newDishSeasons.includes(chip.textContent));
+  });
+  document.getElementById('sportDay').checked = dish.sportDay || false;
+  document.getElementById('vegetarian').checked = dish.vegetarian || false;
+  document.getElementById('grillades').checked = dish.grillades || false;
   openModal('addDishModal');
 }
-
-
 
 function saveDish() {
   const name = document.getElementById('dishName').value.trim();
@@ -420,25 +382,11 @@ function saveDish() {
   const message = editingDishId ? '✅ Plat modifié !' : '✅ Plat ajouté !';
   showToast(message);
   
-// ✅ Réinitialise et ferme la modale après ajout/modif
-resetDishForm();
-closeModal('addDishModal');;
-
-  // 🧹 Nettoyage complet après ajout ou modification
-editingDishId = null;
-newDishSeasons = [];
-
-const nameInput = document.getElementById('dishName');
-const sportDay = document.getElementById('sportDay');
-const vegetarian = document.getElementById('vegetarian');
-const grillades = document.getElementById('grillades');
-const chips = document.querySelectorAll('#seasonsChips .chip');
-
-if (nameInput) nameInput.value = '';
-if (sportDay) sportDay.checked = false;
-if (vegetarian) vegetarian.checked = false;
-if (grillades) grillades.checked = false;
-if (chips) chips.forEach(chip => chip.classList.remove('selected'));
+  // ✅ Réinitialiser le formulaire
+  editingDishId = null;
+  newDishSeasons = [];
+  
+  closeModal('addDishModal');
 }
 
 function deleteDish(id) {
@@ -447,30 +395,6 @@ function deleteDish(id) {
     database.ref(`groups/${groupId}/dishes/${id}`).remove();
     showToast('✅ Plat supprimé');
   }
-}
-
-// Réinitialise complètement le formulaire d'ajout/édition de plat
-function resetDishForm() {
-  editingDishId = null;
-  newDishSeasons = []; // ou selectedSeasons si tu utilises ce nom ailleurs
-
-  const nameInput = document.getElementById('dishName');
-  const sportDay = document.getElementById('sportDay');
-  const vegetarian = document.getElementById('vegetarian');
-  const grillades = document.getElementById('grillades');
-  const chips = document.querySelectorAll('#seasonsChips .chip');
-
-  if (nameInput) nameInput.value = '';
-  if (sportDay) sportDay.checked = false;
-  if (vegetarian) vegetarian.checked = false;
-  if (grillades) grillades.checked = false;
-  if (chips) chips.forEach(chip => chip.classList.remove('selected'));
-
-  // Mettre à jour le titre / bouton si nécessaire
-  const title = document.getElementById('dishModalTitle');
-  const saveBtn = document.getElementById('saveDishBtn');
-  if (title) title.textContent = 'Nouveau plat';
-  if (saveBtn) saveBtn.textContent = 'Ajouter';
 }
 
 function renderDishes() {
@@ -532,112 +456,86 @@ function renderDishes() {
 function generateMenu(targetWeekNumber = null) {
   const currentSeason = getCurrentSeason();
   const recentlyUsed = getRecentlyUsedDishes();
+  
+  // Si pas de numéro de semaine spécifié, générer pour la semaine prochaine
   const weekNumber = targetWeekNumber || (getWeekNumber(new Date()) + 1);
-  const maxAppearances = Number.isInteger(menuConfig.maxAppearances) ? menuConfig.maxAppearances : 1;
+  
+  // Filtrer les plats disponibles
+  const availableDishes = dishes.filter(d => 
+    !recentlyUsed.has(d.id) && 
+    (d.seasons.length === 0 || d.seasons.includes(currentSeason))
+  );
 
-  // Durées des plats selon config
-  const lunchDuration = menuConfig?.mealDuration?.lunch || 1;
-  const dinnerDuration = menuConfig?.mealDuration?.dinner || 1;
-
-  // Filtrer plats valides (saisons, non récemment utilisés)
-  let pool = dishes
-    .filter(d => {
-      const hasSeasons = Array.isArray(d.seasons) && d.seasons.length > 0;
-      const matchSeason = !hasSeasons || d.seasons.includes(currentSeason);
-      return matchSeason && !recentlyUsed.has(d.id);
-    })
-    .map(d => ({ ...d, remaining: maxAppearances }));
-
-  if (pool.length === 0) {
-    showToast('❌ Aucun plat disponible selon la saison/config.', 5000);
+  if (availableDishes.length < 14) {
+    showToast('❌ Pas assez de plats disponibles !', 5000);
     return;
   }
 
   const schedule = [];
-  const usedInMenu = new Map();
-  const pickRandom = arr => arr[Math.floor(Math.random() * arr.length)];
-
-  function getCandidates(requireSport = false, excludeIds = new Set()) {
-    let candidates = pool.filter(p => p.remaining > 0 && !excludeIds.has(p.id));
-    if (requireSport) {
-      const sportCandidates = candidates.filter(p => p.sportDay);
-      if (sportCandidates.length > 0) candidates = sportCandidates;
-    }
-    return candidates;
-  }
-
-  function selectAndConsume(candidate) {
-    if (!candidate) return null;
-    const obj = pool.find(p => p.id === candidate.id);
-    if (!obj) return null;
-    obj.remaining = Math.max(0, obj.remaining - 1);
-    usedInMenu.set(obj.id, (usedInMenu.get(obj.id) || 0) + 1);
-    return { id: obj.id, name: obj.name, seasons: obj.seasons, sportDay: obj.sportDay, vegetarian: obj.vegetarian, grillades: obj.grillades };
-  }
-
-  let lunchRepeatCounter = 0;
-  let dinnerRepeatCounter = 0;
-  let lastLunch = null;
-  let lastDinner = null;
+  const usedInMenu = new Map(); // Compte combien de fois chaque plat est utilisé
 
   for (let i = 0; i < 7; i++) {
     const day = daysOfWeek[i];
-    const isSportDay = Array.isArray(menuConfig.sportDays) && menuConfig.sportDays.includes(day);
-
-    let lunchDish = null;
-    let dinnerDish = null;
-
+    const isSportDay = menuConfig.sportDays.includes(day);
+    
     // === DÉJEUNER ===
-    if (lunchRepeatCounter > 0 && lastLunch) {
-      // répéter le même plat
-      lunchDish = lastLunch;
-      lunchRepeatCounter--;
+    let lunchDish = null;
+    if (menuConfig.mealDuration.lunch === 2 && i > 0 && schedule[i - 1].lunch) {
+      // Répéter le plat du jour précédent
+      lunchDish = schedule[i - 1].lunch;
     } else {
-      // choisir un nouveau plat
-      const requireSport = !!isSportDay;
-      const candidates = getCandidates(requireSport);
-      if (candidates.length > 0) {
-        lunchDish = selectAndConsume(pickRandom(candidates));
-        lastLunch = lunchDish;
-        lunchRepeatCounter = lunchDuration - 1;
+      // Choisir un nouveau plat (max 2 fois dans le menu)
+      const filtered = availableDishes.filter(d => 
+        !usedInMenu.has(d.id) || usedInMenu.get(d.id) < 2
+      );
+      if (filtered.length > 0) {
+        lunchDish = filtered[Math.floor(Math.random() * filtered.length)];
+        usedInMenu.set(lunchDish.id, (usedInMenu.get(lunchDish.id) || 0) + 1);
       }
     }
 
     // === DÎNER ===
-    if (dinnerRepeatCounter > 0 && lastDinner) {
-      dinnerDish = lastDinner;
-      dinnerRepeatCounter--;
+    let dinnerDish = null;
+    if (menuConfig.mealDuration.dinner === 2 && i > 0 && schedule[i - 1].dinner) {
+      // Répéter le plat du jour précédent
+      dinnerDish = schedule[i - 1].dinner;
     } else {
-      const exclude = new Set();
-      if (lunchDish) exclude.add(lunchDish.id);
-      const candidates = getCandidates(false, exclude);
-      if (candidates.length > 0) {
-        dinnerDish = selectAndConsume(pickRandom(candidates));
-        lastDinner = dinnerDish;
-        dinnerRepeatCounter = dinnerDuration - 1;
+      // Choisir un nouveau plat différent du déjeuner (max 2 fois dans le menu)
+      const filtered = availableDishes.filter(d => 
+        d.id !== lunchDish?.id && // Différent du déjeuner du même jour
+        (!usedInMenu.has(d.id) || usedInMenu.get(d.id) < 2)
+      );
+      if (filtered.length > 0) {
+        dinnerDish = filtered[Math.floor(Math.random() * filtered.length)];
+        usedInMenu.set(dinnerDish.id, (usedInMenu.get(dinnerDish.id) || 0) + 1);
       }
     }
 
     schedule.push({ day, lunch: lunchDish, dinner: dinnerDish, isSportDay });
   }
 
-  // === Sauvegarde du menu ===
+  // Calculer les dates du lundi et dimanche de la semaine
   const weekDates = getWeekDates(weekNumber);
+
   const newMenu = {
     id: Date.now(),
-    weekNumber,
-    startDate: weekDates?.monday || null,
-    endDate: weekDates?.sunday || null,
+    weekNumber: weekNumber,
+    startDate: weekDates.monday,
+    endDate: weekDates.sunday,
     schedule
   };
 
   updateSyncIcon(true);
   database.ref(`groups/${groupId}/menus/${newMenu.id}`).set(newMenu);
   showToast('✅ Menu généré !');
-  showTab('menus');
+  
+  // Passer à l'onglet menus
+  document.getElementById('dishesTab').classList.remove('active');
+  document.getElementById('menusTab').classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-btn')[1].classList.add('active');
+  updateMenusTab();
 }
-
-
 
 function regenerateMenu(menuId, weekNumber) {
   if (confirm('Voulez-vous régénérer ce menu ? L\'ancien sera remplacé.')) {
@@ -650,98 +548,71 @@ function regenerateMenu(menuId, weekNumber) {
 
 function renderMenus() {
   const container = document.getElementById('menusList');
-  if (!container) return;
+  
+  if (!container) {
+    console.warn('⏳ Conteneur menus introuvable');
+    return;
+  }
 
   if (!menus || menus.length === 0) {
-    container.innerHTML = '<p style="text-align:center;">Aucun menu enregistré pour le moment.</p>';
+    container.innerHTML = '';
+    updateMenusTab();
     return;
   }
 
   container.innerHTML = '';
 
-  // Trier par semaine décroissante (le plus récent en haut)
-  const sortedMenus = [...menus].sort((a, b) => b.weekNumber - a.weekNumber);
-
-  sortedMenus.forEach((menu, index) => {
+  menus.forEach(menu => {
     const menuCard = document.createElement('div');
     menuCard.className = 'card';
-
-    // === HEADER DE LA SEMAINE ===
-    const displayedWeek = Number.isFinite(menu.weekNumber) ? (menu.weekNumber + 1) : menu.weekNumber;
-    const dateRange = menu.startDate && menu.endDate
+    
+    let scheduleHTML = '';
+    if (Array.isArray(menu.schedule)) {
+      menu.schedule.forEach(day => {
+        scheduleHTML += `
+          <div class="day-card">
+            <div class="day-header">
+              <span class="day-name">${day.day}</span>
+              ${day.isSportDay ? '<span class="sport-badge">💪 Sport</span>' : ''}
+            </div>
+            <div class="meal">
+              <div class="meal-label">Déjeuner</div>
+              <div class="meal-name">${day.lunch?.name || 'Non défini'}</div>
+            </div>
+            <div class="meal">
+              <div class="meal-label">Dîner</div>
+              <div class="meal-name">${day.dinner?.name || 'Non défini'}</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+    
+    const dateRange = menu.startDate && menu.endDate 
       ? `Du ${menu.startDate} au ${menu.endDate}`
-      : '';
-
-    const isLatest = index === 0; // on ouvre par défaut le plus récent
-    const contentId = `menu-content-${menu.id}`;
-
+      : menu.date || '';
+    
     menuCard.innerHTML = `
-      <div class="menu-header" style="display:flex; align-items:center; justify-content:space-between;">
-        <div onclick="toggleMenuContent('${contentId}')" 
-             style="display:flex; align-items:center; gap:8px; cursor:pointer; flex:1;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div class="card-title" style="margin-bottom: 0;">
           <span class="material-icons">calendar_today</span>
           <div>
-            <div><strong>Semaine ${displayedWeek}</strong></div>
-            <div style="font-size:12px; color:var(--md-on-surface-variant);">${dateRange}</div>
+            <div>Semaine ${menu.weekNumber}</div>
+            <div style="font-size: 12px; font-weight: 400; color: var(--md-on-surface-variant);">${dateRange}</div>
           </div>
         </div>
-
-        <div style="display:flex; align-items:center; gap:6px;">
-          <button class="icon-btn" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber}); event.stopPropagation();" 
-                  title="Régénérer ce menu">
-            <span class="material-icons">refresh</span>
-          </button>
-          <span class="material-icons toggle-icon" id="icon-${contentId}" 
-                onclick="toggleMenuContent('${contentId}'); event.stopPropagation();">
-            ${isLatest ? 'expand_less' : 'expand_more'}
-          </span>
-        </div>
+        <button class="icon-btn" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber})" title="Régénérer ce menu">
+          <span class="material-icons">refresh</span>
+        </button>
       </div>
-
-      <div id="${contentId}" class="menu-content" style="margin-top:10px; display:${isLatest ? 'block' : 'none'};">
-        ${renderMenuSchedule(menu.schedule)}
-      </div>
+      ${scheduleHTML}
     `;
-
+    
     container.appendChild(menuCard);
   });
+
+  updateMenusTab();
 }
-
-
-// === Fonction utilitaire pour générer le HTML des jours ===
-function renderMenuSchedule(schedule) {
-  if (!Array.isArray(schedule)) return '<p>Aucune donnée de menu.</p>';
-
-  return schedule.map(day => `
-    <div class="day-card">
-      <div class="day-header">
-        <span class="day-name">${day.day}</span>
-        ${day.isSportDay ? '<span class="sport-badge">💪 Sport</span>' : ''}
-      </div>
-      <div class="meal">
-        <div class="meal-label">Déjeuner</div>
-        <div class="meal-name">${day.lunch?.name || 'Non défini'}</div>
-      </div>
-      <div class="meal">
-        <div class="meal-label">Dîner</div>
-        <div class="meal-name">${day.dinner?.name || 'Non défini'}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-// === Fonction utilitaire pour l'accordéon ===
-function toggleMenuContent(id) {
-  const content = document.getElementById(id);
-  const icon = document.getElementById('icon-' + id);
-  if (!content || !icon) return;
-
-  const isVisible = content.style.display === 'block';
-  content.style.display = isVisible ? 'none' : 'block';
-  icon.textContent = isVisible ? 'expand_more' : 'expand_less';
-}
-
-
 
 // ===== CONFIGURATION =====
 
@@ -826,12 +697,10 @@ function getCurrentSeason() {
 }
 
 function getRecentlyUsedDishes() {
-  // On considère que les menus sont identifiés par semaine = semaine_courante + 1
-  const currentWeek = getWeekNumber(new Date()) + 1;
+  const currentWeek = getWeekNumber(new Date());
   const recentMenus = menus.filter(m => currentWeek - m.weekNumber <= 3 && currentWeek - m.weekNumber >= 0);
   const usedDishIds = new Set();
   recentMenus.forEach(menu => {
-    if (!Array.isArray(menu.schedule)) return;
     menu.schedule.forEach(day => {
       if (day.lunch) usedDishIds.add(day.lunch.id);
       if (day.dinner) usedDishIds.add(day.dinner.id);
@@ -849,28 +718,6 @@ function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove('active');
 }
-
-// Réinitialisation complète du formulaire à la fermeture de la modale d’ajout/édition
-function resetDishForm() {
-  editingDishId = null;
-  selectedSeasons = [];
-
-  const nameInput = document.getElementById('dishName');
-  const sportDay = document.getElementById('sportDay');
-  const vegetarian = document.getElementById('vegetarian');
-  const grillades = document.getElementById('grillades');
-  const chips = document.querySelectorAll('#seasonsChips .chip');
-
-  if (nameInput) nameInput.value = '';
-  if (sportDay) sportDay.checked = false;
-  if (vegetarian) vegetarian.checked = false;
-  if (grillades) grillades.checked = false;
-  if (chips) chips.forEach(chip => chip.classList.remove('selected'));
-}
-
-// Lorsqu’on ferme la modale manuellement, on nettoie aussi le formulaire
-document.getElementById('addDishModal').addEventListener('close', resetDishForm);
-
 
 // ===== PWA =====
 
@@ -969,12 +816,13 @@ window.showCreateGroup = showCreateGroup;
 window.showJoinGroup = showJoinGroup;
 window.joinGroup = joinGroup;
 window.leaveGroup = leaveGroup;
-window.showTab = showTab;
+window.switchTab = switchTab;
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.openAddDishModal = openAddDishModal;
 window.saveDish = saveDish;
 window.generateMenu = generateMenu;
 window.regenerateMenu = regenerateMenu;
+window.toggleMenuContent = toggleMenuContent;
 window.setMealDuration = setMealDuration;
 window.installApp = installApp;
