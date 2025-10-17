@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6750A4">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">  
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Menu Generator">
   <meta name="description" content="Générateur de menus hebdomadaires avec synchronisation en temps réel">
@@ -16,7 +15,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
-  <link rel="icon" href="data:,">
 </head>
 <body>
   <div class="container">
@@ -40,9 +38,9 @@
           <span id="syncIcon" class="material-icons">check_circle</span>
         </div>
       </div>
-      <!--<div id="syncBadge" class="sync-badge hidden">
+      <div id="syncBadge" class="sync-badge hidden">
         <div id="groupIdDisplay" class="group-id-text"></div>
-      </div>-->
+      </div>
     </div>
 
     <!-- Group Setup -->
@@ -96,11 +94,11 @@
 
       <!-- Tabs -->
       <div class="tabs">
-        <button class="tab-btn" onclick="showTab('dishes', event)">
+        <button class="tab-btn" onclick="showTab('dishes')">
           <span class="material-icons">restaurant_menu</span>
           Mes recettes
         </button>
-        <button class="tab-btn" onclick="showTab('menus', event)">
+        <button class="tab-btn" onclick="showTab('menus')">
           <span class="material-icons">calendar_today</span>
           Mes menus
         </button>
@@ -128,7 +126,9 @@
 
       <!-- Menus Tab -->
       <div id="menusTab" class="tab-content hidden">
-        <div id="menusList"></div>
+        <div id="menusListContainer">
+          <div id="menusList"></div>
+        </div>
         <div id="noMenus" class="empty-state">
           <span class="material-icons" style="font-size: 48px; color: var(--md-outline);">calendar_today</span>
           <p>Aucun menu généré</p>
@@ -168,7 +168,7 @@
       </div>
 
       <div class="modal-buttons">
-        <button class="btn btn-text" onclick="resetDishForm(); closeModal('addDishModal')">Annuler</button>
+        <button class="btn btn-text" onclick="closeModal('addDishModal')">Annuler</button>
         <button class="btn btn-filled" onclick="saveDish()" id="saveDishBtn">Ajouter</button>
       </div>
     </div>
@@ -223,7 +223,5 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <script src="./script.js"></script>
-  <div id="tooltip" class="tooltip hidden"></div>
-
 </body>
 </html>
