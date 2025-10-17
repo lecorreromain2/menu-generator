@@ -803,6 +803,10 @@ window.onload = () => {
   showTab('dishes');
 };
 
+window.addEventListener('load', () => {
+  showTab('dishes'); // active l’onglet recettes
+});
+
 
 // Exposer les fonctions globalement pour les onclick HTML
 window.showGroupTypeSelection = showGroupTypeSelection;
