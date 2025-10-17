@@ -223,5 +223,19 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <script src="./script.js"></script>
+
+  <!-- ✅ Barre d’onglets en bas de page -->
+<div id="tabBar" class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('dishes')">
+    <span class="material-icons">restaurant</span><br>Recettes
+  </button>
+  <button class="tab-btn" onclick="showTab('menus')">
+    <span class="material-icons">calendar_month</span><br>Menus
+  </button>
+  <button class="tab-btn" onclick="showTab('config')">
+    <span class="material-icons">settings</span><br>Config
+  </button>
+</div>
+
 </body>
 </html>
