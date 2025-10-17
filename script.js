@@ -790,6 +790,17 @@ function setupTooltip() {
   });
 }
 
+function toggleMenuContent(id) {
+  const content = document.getElementById(id);
+  const icon = document.getElementById('icon-' + id);
+  if (!content || !icon) return;
+
+  const isVisible = content.style.display === 'block';
+  content.style.display = isVisible ? 'none' : 'block';
+  icon.textContent = isVisible ? 'expand_more' : 'expand_less';
+}
+
+
 // ===== INITIALISATION =====
 
 window.onload = function() {
