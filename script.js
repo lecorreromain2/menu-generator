@@ -397,59 +397,40 @@ function deleteDish(id) {
   }
 }
 
-function renderDishes() {
+function renderDishes(dishes = []) {
   const container = document.getElementById('dishesContainer');
-  const countEl = document.getElementById('dishCount');
-
-  if (!container || !countEl) return;
-
-  if (!dishes || dishes.length === 0) {
-    container.innerHTML = '';
-    countEl.textContent = 0;
-    updateDishesTab();
+  if (!container) {
+    console.error('❌ Impossible de trouver #dishesContainer');
     return;
   }
 
   container.innerHTML = '';
 
+  if (!dishes.length) {
+    container.innerHTML = "<p class='empty'>Aucune recette disponible pour ce groupe.</p>";
+    return;
+  }
+
   dishes.forEach(dish => {
-    const dishEl = document.createElement('div');
-    dishEl.className = 'dish-item';
-
-    let tagsHTML = '';
-    if (Array.isArray(dish.seasons)) {
-      dish.seasons.forEach(s => {
-        tagsHTML += `<span class="tag">${s}</span>`;
-      });
-    }
-    if (dish.sportDay) tagsHTML += `<span class="tag tag-blue">Sport</span>`;
-    if (dish.vegetarian) tagsHTML += `<span class="tag tag-green">Végé</span>`;
-    if (dish.grillades) tagsHTML += `<span class="tag tag-orange">Grill</span>`;
-
-    dishEl.innerHTML = `
-      <div style="flex: 1;">
-        <div class="dish-name">${dish.name}</div>
-        <div class="tags">${tagsHTML}</div>
+    const card = document.createElement('div');
+    card.className = 'dish-card';
+    card.innerHTML = `
+      <div class="dish-info">
+        <h3>${dish.name || 'Sans nom'}</h3>
+        <p>${dish.sportDay ? '🏋️ Jour de sport' : '🍽️ Standard'}</p>
+        ${dish.vegetarian ? '<p>🥦 Végétarien</p>' : ''}
+        ${dish.grillades ? '<p>🔥 Grillades</p>' : ''}
       </div>
-      <div style="display: flex; gap: 4px;">
-        <button class="icon-btn edit-btn">
-          <span class="material-icons">edit</span>
-        </button>
-        <button class="icon-btn delete-btn">
-          <span class="material-icons">delete</span>
-        </button>
+      <div class="dish-actions">
+        <button class="btn btn-text" onclick="openEditDishModal(${JSON.stringify(dish).replace(/"/g, '&quot;')})">Modifier</button>
       </div>
     `;
-
-    dishEl.querySelector('.edit-btn').addEventListener('click', () => openEditDishModal(dish));
-    dishEl.querySelector('.delete-btn').addEventListener('click', () => deleteDish(dish.id));
-
-    container.appendChild(dishEl);
+    container.appendChild(card);
   });
 
-  countEl.textContent = dishes.length;
-  updateDishesTab();
+  console.log(`🎨 ${dishes.length} recettes affichées`);
 }
+
 
 // ===== MENU =====
 
