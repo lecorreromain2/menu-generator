@@ -527,72 +527,39 @@ function regenerateMenu(menuId, weekNumber) {
   }
 }
 
-function renderMenus() {
+function renderMenus(menus = []) {
   const container = document.getElementById('menusList');
-  
   if (!container) {
-    console.warn('⏳ Conteneur menus introuvable');
-    return;
-  }
-
-  if (!menus || menus.length === 0) {
-    container.innerHTML = '';
-    updateMenusTab();
+    console.error('❌ Impossible de trouver #menusList');
     return;
   }
 
   container.innerHTML = '';
 
+  if (!menus.length) {
+    container.innerHTML = "<p class='empty'>Aucun menu généré pour le moment.</p>";
+    return;
+  }
+
   menus.forEach(menu => {
-    const menuCard = document.createElement('div');
-    menuCard.className = 'card';
-    
-    let scheduleHTML = '';
-    if (Array.isArray(menu.schedule)) {
-      menu.schedule.forEach(day => {
-        scheduleHTML += `
-          <div class="day-card">
-            <div class="day-header">
-              <span class="day-name">${day.day}</span>
-              ${day.isSportDay ? '<span class="sport-badge">💪 Sport</span>' : ''}
-            </div>
-            <div class="meal">
-              <div class="meal-label">Déjeuner</div>
-              <div class="meal-name">${day.lunch?.name || 'Non défini'}</div>
-            </div>
-            <div class="meal">
-              <div class="meal-label">Dîner</div>
-              <div class="meal-name">${day.dinner?.name || 'Non défini'}</div>
-            </div>
-          </div>
-        `;
-      });
-    }
-    
-    const dateRange = menu.startDate && menu.endDate 
-      ? `Du ${menu.startDate} au ${menu.endDate}`
-      : menu.date || '';
-    
-    menuCard.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <div class="card-title" style="margin-bottom: 0;">
-          <span class="material-icons">calendar_today</span>
-          <div>
-            <div>Semaine ${menu.weekNumber}</div>
-            <div style="font-size: 12px; font-weight: 400; color: var(--md-on-surface-variant);">${dateRange}</div>
-          </div>
-        </div>
-        <button class="icon-btn" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber})" title="Régénérer ce menu">
-          <span class="material-icons">refresh</span>
-        </button>
-      </div>
-      ${scheduleHTML}
+    const section = document.createElement('div');
+    section.className = 'menu-card';
+    section.innerHTML = `
+      <h3>Semaine ${menu.weekNumber} (${menu.startDate} → ${menu.endDate})</h3>
+      <ul>
+        ${menu.days.map(day => `
+          <li>
+            <strong>${day.date} :</strong>
+            <span>${day.lunch || '-'}</span> /
+            <span>${day.dinner || '-'}</span>
+          </li>
+        `).join('')}
+      </ul>
     `;
-    
-    container.appendChild(menuCard);
+    container.appendChild(section);
   });
 
-  updateMenusTab();
+  console.log(`📅 ${menus.length} menus affichés`);
 }
 
 // ===== CONFIGURATION =====
