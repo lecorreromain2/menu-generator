@@ -173,7 +173,7 @@ menusArray.forEach(menu => {
       </div>
     </div>
 
-    <div id="content-${menu.id}" style="display:block;">
+    <div id="content-${menu.id}" class="menu-collapse open">
       ${scheduleHTML}
     </div>
   `;
@@ -368,11 +368,16 @@ function setupTooltip() {
 function toggleMenuContent(id) {
   const content = document.getElementById(id);
   const icon = document.getElementById('icon-' + id);
-  if (!content || !icon) return;
 
-  const isVisible = content.style.display === 'block';
-  content.style.display = isVisible ? 'none' : 'block';
-  icon.textContent = isVisible ? 'expand_more' : 'expand_less';
+  const isOpen = content.classList.contains('open');
+
+  if (isOpen) {
+    content.classList.remove('open');
+    icon.textContent = 'expand_more';
+  } else {
+    content.classList.add('open');
+    icon.textContent = 'expand_less';
+  }
 }
 
 // ===== INITIALISATION =====
