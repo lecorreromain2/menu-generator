@@ -555,6 +555,8 @@ function switchToTab(tabName) {
   } else if (tabName === 'config') {
     updateConfigDisplay();
   }
+  document.getElementById('fabAdd')?.classList.toggle('hidden', tabName !== 'dishes');
+  document.getElementById('fabMenu')?.classList.toggle('hidden', tabName !== 'menus');
 }
 
 function updateDishesTab() {
