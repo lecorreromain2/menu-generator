@@ -877,3 +877,15 @@ body {
   cursor:pointer;
   z-index:1000;
 }
+
+/* --- Accordéon des semaines --- */
+.menu-collapse {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .3s ease;
+}
+
+.menu-collapse.open {
+  max-height: 2000px; /* suffisamment grand pour tout contenir */
+}
+
