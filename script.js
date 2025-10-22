@@ -400,7 +400,8 @@ window.generateMenu = generateMenu;
 window.regenerateMenu = regenerateMenu;
 window.toggleMenuContent = toggleMenuContent;
 window.setMealDuration = setMealDuration;
-window.installApp = installApp;== NOTIFICATIONS =====
+window.installApp = installApp;
+//== NOTIFICATIONS =====
 
 function showToast(message, duration = 3000) {
   const toast = document.getElementById('customToast');
