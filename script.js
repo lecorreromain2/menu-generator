@@ -133,43 +133,53 @@ function renderMenus(menusArray = menus) {
 
   if (empty) empty.style.display = 'none';
 
-  menusArray.forEach(menu => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    
-    let scheduleHTML = '';
-    menu.schedule.forEach(day => {
-      scheduleHTML += `
-        <div class="day-card">
-          <div class="day-header">
-            <span class="day-name">${day.day}</span>
-            ${day.isSportDay ? '<span class="sport-badge">Sport</span>' : ''}
-          </div>
-          <div class="meal">
-            <div class="meal-label">Déjeuner</div>
-            <div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>
-          </div>
-          <div class="meal">
-            <div class="meal-label">Dîner</div>
-            <div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>
-          </div>
+menusArray.forEach(menu => {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  let scheduleHTML = '';
+  menu.schedule.forEach(day => {
+    scheduleHTML += `
+      <div class="day-card">
+        <div class="day-header">
+          <span class="day-name">${day.day}</span>
+          ${day.isSportDay ? '<span class="sport-badge">Sport</span>' : ''}
         </div>
-      `;
-    });
-    
-    card.innerHTML = `
-      <div class="card-title">
+        <div class="meal">
+          <div class="meal-label">Déjeuner</div>
+          <div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>
+        </div>
+        <div class="meal">
+          <div class="meal-label">Dîner</div>
+          <div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  card.innerHTML = `
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
         <span class="material-icons">calendar_today</span>
         Semaine ${menu.weekNumber} (${menu.startDate} → ${menu.endDate})
       </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="icon-btn" title="Régénérer" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber})">
+          <span class="material-icons">refresh</span>
+        </button>
+        <button class="icon-btn" title="Afficher/masquer" onclick="toggleMenuContent('content-${menu.id}')">
+          <span id="icon-content-${menu.id}" class="material-icons">expand_less</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="content-${menu.id}" style="display:block;">
       ${scheduleHTML}
-      <button class="btn btn-outlined" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber})" style="width: 100%; margin-top: 12px;">
-        <span class="material-icons">refresh</span>
-        Régénérer ce menu
-      </button>
-    `;
-    container.appendChild(card);
-  });
+    </div>
+  `;
+
+  container.appendChild(card);
+});
 
   console.log(`📅 ${menusArray.length} menus affichés`);
 }
