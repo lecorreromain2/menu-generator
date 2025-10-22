@@ -849,3 +849,13 @@ body {
 .w-full {
   width: 100%;
 }
+
+.menu-collapse {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .3s ease;
+}
+
+.menu-collapse.open {
+  max-height: 2000px; /* assez grand pour tout contenir */
+}
