@@ -816,14 +816,14 @@ function renderDishes(dishesArray = dishes) {
   container.innerHTML = '';
 
   if (!dishesArray.length) {
-    listCard?.classList.add('hidden');
-    emptyState?.classList.remove('hidden');
+    if (listCard) listCard.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
     if (countSpan) countSpan.textContent = '0';
     return;
   }
 
-  emptyState?.classList.add('hidden');
-  listCard?.classList.remove('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+  if (listCard) listCard.classList.remove('hidden');
 
   dishesArray.forEach(dish => {
     const card = document.createElement('div');
