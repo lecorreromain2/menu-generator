@@ -504,11 +504,70 @@ function leaveGroup() {
   }
 }
 
+// ------- Copier l'ID du groupe (robuste + fallback) -------
 function copyGroupId() {
-  if (!groupId) return;
-  navigator.clipboard.writeText(groupId)
-    .then(() => showToast("📋 ID copié !"))
-    .catch(() => showToast("❌ Impossible de copier"));
+  // Récupère l'ID soit depuis la variable globale, soit depuis l'affichage si vide
+  const id = (typeof groupId !== 'undefined' && groupId) ? groupId :
+             (document.getElementById('currentGroupIdDisplay')?.textContent || '').trim();
+
+  if (!id) {
+    showToast('❌ Aucun ID de groupe disponible');
+    return;
+  }
+
+  const flashCopyIcon = () => {
+    // Cherche le bouton par son onclick (compatible même si tu n'as pas donné d'id)
+    const btn = document.querySelector('button[onclick="copyGroupId()"]') || document.getElementById('copyGroupBtn');
+    if (!btn) return;
+    const icon = btn.querySelector('.material-icons') || btn;
+    const old = icon.textContent;
+    icon.textContent = 'check';
+    setTimeout(() => { icon.textContent = old; }, 1000);
+  };
+
+  // Méthode moderne (nécessite https:// ou localhost)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(id).then(() => {
+      showToast('📋 ID copié !');
+      flashCopyIcon();
+    }).catch((err) => {
+      console.warn('Clipboard API failed, fallback:', err);
+      // fallback
+      fallbackCopy(id, flashCopyIcon);
+    });
+    return;
+  }
+
+  // Si Clipboard API non disponible → fallback
+  fallbackCopy(id, flashCopyIcon);
+}
+
+function fallbackCopy(text, onSuccess) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    // évite le focus scroll
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+
+    if (ok) {
+      showToast('📋 ID copié (fallback) !');
+      if (typeof onSuccess === 'function') onSuccess();
+    } else {
+      // dernier recours : affiche le prompt pour copier manuellement
+      prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
+    }
+  } catch (e) {
+    console.error('fallbackCopy error', e);
+    prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
+  }
 }
 
 // ===== ONGLETS =====
