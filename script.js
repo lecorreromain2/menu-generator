@@ -416,6 +416,7 @@ window.regenerateMenu = regenerateMenu;
 window.toggleMenuContent = toggleMenuContent;
 window.setMealDuration = setMealDuration;
 window.installApp = installApp;
+window.copyGroupId = copyGroupId;
 //== NOTIFICATIONS =====
 
 function showToast(message, duration = 3000) {
@@ -863,5 +864,17 @@ function renderDishes(dishesArray = dishes) {
   if (countSpan) countSpan.textContent = dishesArray.length.toString();
   console.log(`🎨 ${dishesArray.length} recettes affichées`);
 }
+
+function copyGroupId() {
+  const text = groupId;
+  if (!text) return;
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("📋 ID copié !");
+  }).catch(() => {
+    showToast("❌ Impossible de copier");
+  });
+}
+
 
 // ===
