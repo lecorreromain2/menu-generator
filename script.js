@@ -400,23 +400,7 @@ window.onload = function() {
   setupPWA();
 };
 
-// Exposer les fonctions globalement pour les onclick HTML
-window.showGroupTypeSelection = showGroupTypeSelection;
-window.showCreateGroup = showCreateGroup;
-window.showJoinGroup = showJoinGroup;
-window.joinGroup = joinGroup;
-window.leaveGroup = leaveGroup;
-window.switchToTab = switchToTab;
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.openAddDishModal = openAddDishModal;
-window.saveDish = saveDish;
-window.generateMenu = generateMenu;
-window.regenerateMenu = regenerateMenu;
-window.toggleMenuContent = toggleMenuContent;
-window.setMealDuration = setMealDuration;
-window.installApp = installApp;
-window.copyGroupId = copyGroupId;
+
 //== NOTIFICATIONS =====
 
 function showToast(message, duration = 3000) {
@@ -518,6 +502,13 @@ function leaveGroup() {
     localStorage.removeItem('groupId');
     location.reload();
   }
+}
+
+function copyGroupId() {
+  if (!groupId) return;
+  navigator.clipboard.writeText(groupId)
+    .then(() => showToast("📋 ID copié !"))
+    .catch(() => showToast("❌ Impossible de copier"));
 }
 
 // ===== ONGLETS =====
@@ -866,16 +857,23 @@ function renderDishes(dishesArray = dishes) {
   console.log(`🎨 ${dishesArray.length} recettes affichées`);
 }
 
-function copyGroupId() {
-  const text = groupId;
-  if (!text) return;
-
-  navigator.clipboard.writeText(text).then(() => {
-    showToast("📋 ID copié !");
-  }).catch(() => {
-    showToast("❌ Impossible de copier");
-  });
-}
+// Exposer les fonctions globalement pour les onclick HTML
+window.showGroupTypeSelection = showGroupTypeSelection;
+window.showCreateGroup = showCreateGroup;
+window.showJoinGroup = showJoinGroup;
+window.joinGroup = joinGroup;
+window.leaveGroup = leaveGroup;
+window.switchToTab = switchToTab;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.openAddDishModal = openAddDishModal;
+window.saveDish = saveDish;
+window.generateMenu = generateMenu;
+window.regenerateMenu = regenerateMenu;
+window.toggleMenuContent = toggleMenuContent;
+window.setMealDuration = setMealDuration;
+window.installApp = installApp;
+window.copyGroupId = copyGroupId;
 
 
 // ===
