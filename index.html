@@ -223,7 +223,12 @@
       <div class="modal-title">Paramètres du groupe</div>
       
       <label class="label">ID du groupe</label>
-      <div class="group-id-display" id="currentGroupId"></div>
+<div style="display:flex; align-items:center; gap:8px;">
+  <div class="group-id-display" id="currentGroupIdDisplay" style="flex:1;"></div>
+  <button class="icon-btn" onclick="copyGroupId()" title="Copier">
+    <span class="material-icons">content_copy</span>
+  </button>
+</div>
       <div class="info-text">
         Partagez cet ID avec d'autres personnes pour qu'ils rejoignent votre groupe et synchronisent leurs données.
       </div>
