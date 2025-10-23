@@ -506,7 +506,8 @@ function showMainApp() {
     syncIcon.title = `Groupe : ${groupId}`;
   }
   
-  document.getElementById('currentGroupId').textContent = groupId;
+  const el = document.getElementById('currentGroupIdDisplay');
+if (el) el.textContent = groupId;
   
   // Afficher l'onglet recettes par défaut
   switchToTab('dishes');
