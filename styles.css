@@ -889,3 +889,17 @@ body {
   max-height: 2000px; /* suffisamment grand pour tout contenir */
 }
 
+.input-feedback {
+  font-size: 0.85rem;
+  margin-top: 4px;
+  min-height: 18px;
+}
+
+.input-feedback.duplicate {
+  color: #d32f2f; /* rouge */
+}
+
+.input-feedback.ok {
+  color: #388e3c; /* vert */
+}
+
