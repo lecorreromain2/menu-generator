@@ -918,24 +918,53 @@ function renderDishes(dishesArray = dishes) {
 
 const dishNameInput = document.getElementById('dishName');
 const dishNameFeedback = document.getElementById('dishNameFeedback');
+const dishSuggestions = document.getElementById('dishSuggestions');
 
 dishNameInput.addEventListener('input', () => {
   const value = dishNameInput.value.trim().toLowerCase();
+  
+  // reset affichage si vide
   if (!value) {
     dishNameFeedback.textContent = '';
     dishNameFeedback.className = 'input-feedback';
+    dishSuggestions.innerHTML = '';
     return;
   }
 
-  const exists = dishes.some(d => d.name.toLowerCase() === value);
-
-  if (exists) {
+  // Vérifier doublon exact
+  const existsExact = dishes.some(d => d.name.toLowerCase() === value);
+  if (existsExact) {
     dishNameFeedback.textContent = '⚠️ Une recette avec ce nom existe déjà';
     dishNameFeedback.className = 'input-feedback duplicate';
   } else {
-    dishNameFeedback.textContent = '✅ Aucun doublon trouvé';
+    dishNameFeedback.textContent = '✅ Aucun doublon exact';
     dishNameFeedback.className = 'input-feedback ok';
   }
+
+  // Suggestions partielles dans le bon ordre
+  const suggestions = dishes
+    .filter(d => d.name.toLowerCase().includes(value))
+    .slice(0, 5);
+
+  if (suggestions.length === 0) {
+    dishSuggestions.innerHTML = '';
+    return;
+  }
+
+  dishSuggestions.innerHTML = `
+    <div style="font-weight:600;color:#555;margin-bottom:2px;">Suggestions :</div>
+    ${suggestions.map(d => `<div class="sugg-item">${d.name}</div>`).join('')}
+  `;
+
+  // Clic sur suggestion = remplir
+  document.querySelectorAll('.sugg-item').forEach(el => {
+    el.addEventListener('click', () => {
+      dishNameInput.value = el.textContent;
+      dishSuggestions.innerHTML = '';
+      dishNameFeedback.textContent = '⚠️ Une recette avec ce nom existe déjà';
+      dishNameFeedback.className = 'input-feedback duplicate';
+    });
+  });
 });
 
 // Exposer les fonctions globalement pour les onclick HTML
