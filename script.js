@@ -916,6 +916,28 @@ function renderDishes(dishesArray = dishes) {
   console.log(`🎨 ${dishesArray.length} recettes affichées`);
 }
 
+const dishNameInput = document.getElementById('dishName');
+const dishNameFeedback = document.getElementById('dishNameFeedback');
+
+dishNameInput.addEventListener('input', () => {
+  const value = dishNameInput.value.trim().toLowerCase();
+  if (!value) {
+    dishNameFeedback.textContent = '';
+    dishNameFeedback.className = 'input-feedback';
+    return;
+  }
+
+  const exists = dishes.some(d => d.name.toLowerCase() === value);
+
+  if (exists) {
+    dishNameFeedback.textContent = '⚠️ Une recette avec ce nom existe déjà';
+    dishNameFeedback.className = 'input-feedback duplicate';
+  } else {
+    dishNameFeedback.textContent = '✅ Aucun doublon trouvé';
+    dishNameFeedback.className = 'input-feedback ok';
+  }
+});
+
 // Exposer les fonctions globalement pour les onclick HTML
 window.showGroupTypeSelection = showGroupTypeSelection;
 window.showCreateGroup = showCreateGroup;
