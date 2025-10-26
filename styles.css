@@ -903,3 +903,16 @@ body {
   color: #388e3c; /* vert */
 }
 
+.suggestions-list {
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
+.suggestions-list div {
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.suggestions-list div:hover {
+  background: #eee;
+}
