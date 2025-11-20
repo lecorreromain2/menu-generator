@@ -18,7 +18,7 @@
   --md-secondary-container: #B7F4E5; /* Conteneur Secondaire */
   --md-on-secondary-container: #1E2321;
   
-  --md-tertiary-container: #D6E6F8; /* Nouveau Conteneur Tertiaire */
+  --md-tertiary-container: #D6E6F8; /* Nouveau Conteneur Tertiaire (fond des cartes jour) */
 
   --md-surface: #FFFBFE;
   --md-surface-variant: #E7E0EC;
@@ -169,15 +169,15 @@ body {
   box-shadow: none;
 }
 
-/* CORRECTION ESPACEMENT ACTIONS */
+/* Actions (Modifier/Supprimer) */
 .dish-actions {
     display: flex;
-    gap: 16px; /* Espacement accru entre les boutons d'action */
+    gap: 16px; 
     align-items: center;
     flex-shrink: 0;
 }
 
-/* Icon Button (Modifier/Supprimer) */
+/* Icon Button */
 .icon-btn {
   background: var(--md-surface);
   border: none;
@@ -226,7 +226,7 @@ body {
   justify-content: flex-end;
 }
 
-/* CORRECTION ALIGNEMENT BOUTONS DANS LA MODALE */
+/* ALIGNEMENT BOUTONS MODALE */
 .modal-buttons .btn {
   flex-grow: 1; 
   width: auto; 
@@ -238,7 +238,6 @@ body {
 .modal-buttons .btn-filled {
   flex-grow: 1.5; 
 }
-/* FIN CORRECTION ALIGNEMENT */
 
 /* Input */
 .input {
@@ -324,11 +323,13 @@ body {
     flex-shrink: 0;
     transition: all 0.2s;
 }
+
 .plain-checkbox input[type="checkbox"]:checked {
     background: var(--md-primary);
     border-color: var(--md-primary);
     box-shadow: none;
 }
+
 .plain-checkbox input[type="checkbox"]:checked::after {
     content: '✓';
     color: white;
@@ -348,12 +349,29 @@ body {
   box-shadow: none; 
 }
 
+/* CORRECTION LISIBILITÉ MENUS */
+.meal-label {
+  font-weight: 400; 
+  color: var(--md-on-surface-variant);
+  font-size: 14px; /* Augmenté de 12px à 14px */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.meal-name {
+  color: var(--md-on-surface);
+  font-size: 16px; /* Augmenté de 14px à 16px */
+}
+/* FIN CORRECTION LISIBILITÉ */
+
+
 /* !!! CRITIQUE : Assurer le masquage !!! */
 .hidden {
   display: none !important;
 }
 
-/* FAB (Bouton d'action flottant M3) */
+/* FAB */
 .fab {
   position: fixed;
   bottom: 105px;
@@ -371,6 +389,19 @@ body {
   cursor:pointer;
   z-index:1000;
 }
+
+/* Menu Collapse (Réintégration de la fonctionnalité) */
+.menu-collapse {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .3s ease;
+}
+
+.menu-collapse.open {
+  max-height: 2000px; /* Assurez-vous que c'est suffisant pour le contenu */
+}
+/* Fin Menu Collapse */
+
 
 /* Tab Content */
 .tab-content {
@@ -427,7 +458,7 @@ body {
   box-shadow: none;
 }
 
-/* Global Material Icons Size for titles */
+/* Global Material Icons Size */
 .material-icons {
     font-size: 24px; 
     vertical-align: middle;
