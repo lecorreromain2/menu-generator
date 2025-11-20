@@ -323,13 +323,11 @@ body {
     flex-shrink: 0;
     transition: all 0.2s;
 }
-
 .plain-checkbox input[type="checkbox"]:checked {
     background: var(--md-primary);
     border-color: var(--md-primary);
     box-shadow: none;
 }
-
 .plain-checkbox input[type="checkbox"]:checked::after {
     content: '✓';
     color: white;
@@ -349,22 +347,77 @@ body {
   box-shadow: none; 
 }
 
-/* CORRECTION LISIBILITÉ MENUS */
+/* NOUVEAUX STYLES CRITIQUES POUR LA MISE EN PAGE DU MENU */
+
+.day-header-new {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.day-name-large {
+    font-size: 20px; /* Jour plus visible */
+    font-weight: 700;
+    color: var(--md-on-surface);
+}
+
+.sport-tag {
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+    padding: 6px 12px;
+    border-radius: 16px; /* Tag style pilule */
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.meal-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* 1 colonne gauche, 1 séparateur, 1 colonne droite */
+    gap: 8px;
+}
+
+.meal-separator {
+    width: 1px;
+    background-color: var(--md-on-surface-variant);
+    opacity: 0.3;
+}
+
+.meal-column {
+    padding: 0 4px;
+}
+
 .meal-label {
-  font-weight: 400; 
-  color: var(--md-on-surface-variant);
-  font-size: 14px; /* Augmenté de 12px à 14px */
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
+    font-weight: 500; /* Plus de poids pour le titre (Déjeuner/Dîner) */
+    color: var(--md-on-surface-variant);
+    font-size: 14px; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
 }
 
 .meal-name {
-  color: var(--md-on-surface);
-  font-size: 16px; /* Augmenté de 14px à 16px */
+    color: var(--md-on-surface);
+    font-size: 16px; 
+    font-weight: 400;
 }
-/* FIN CORRECTION LISIBILITÉ */
+/* FIN NOUVEAUX STYLES */
 
+/* Menu Collapse (Fonctionnalité) */
+.menu-collapse {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .3s ease;
+}
+
+.menu-collapse.open {
+  max-height: 2000px; 
+}
+/* Fin Menu Collapse */
+
+
+/* ... (Reste des styles M3) ... */
 
 /* !!! CRITIQUE : Assurer le masquage !!! */
 .hidden {
@@ -389,19 +442,6 @@ body {
   cursor:pointer;
   z-index:1000;
 }
-
-/* Menu Collapse (Réintégration de la fonctionnalité) */
-.menu-collapse {
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height .3s ease;
-}
-
-.menu-collapse.open {
-  max-height: 2000px; /* Assurez-vous que c'est suffisant pour le contenu */
-}
-/* Fin Menu Collapse */
-
 
 /* Tab Content */
 .tab-content {
