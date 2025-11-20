@@ -1,10 +1,13 @@
+/*
+ * Générateur de Menus - Styles Material You (Vert Teal)
+ */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-:root { 
+:root {
   /* NOUVELLE PALETTE MATERIAL YOU (Inspirée du Vert Teal #00A381) */
   --md-primary: #00A381; /* Vert Teal */
   --md-on-primary: #FFFFFF;
@@ -95,7 +98,7 @@ body {
 .btn-filled, .fab {
   background: var(--md-primary);
   color: var(--md-on-primary);
-  box-shadow: var(--m3-shadow-2); /* Plus d'élévation sur le filled */
+  box-shadow: var(--m3-shadow-2);
 }
 
 .btn-filled:active, .fab:active {
@@ -131,7 +134,7 @@ body {
 .card,
 .modal-content {
   background: var(--md-surface);
-  border-radius: 16px; /* Coins légèrement moins arrondis pour les cartes */
+  border-radius: 16px; 
   padding: 24px;
   margin-bottom: 16px;
   box-shadow: var(--m3-shadow-1);
@@ -146,14 +149,14 @@ body {
 
 /* Dish Cards */
 .dish-card {
-  background: var(--md-tertiary-container); /* Utilisation du conteneur Tertiaire pour un fond différent */
+  background: var(--md-tertiary-container);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: none; /* Pas d'ombre sur les petits éléments M3 */
+  box-shadow: none;
 }
 
 /* Icon Button */
@@ -172,7 +175,7 @@ body {
 }
 
 .icon-btn:hover {
-  background: rgba(0, 163, 129, 0.1); /* Teal transparent au survol */
+  background: rgba(0, 163, 129, 0.1); 
 }
 
 .icon-btn:active {
@@ -198,6 +201,27 @@ body {
   display: flex;
 }
 
+.modal-buttons {
+  display: flex; /* CRITIQUE: Assure l'alignement horizontal */
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+
+/* CORRECTION ALIGNEMENT BOUTONS DANS LA MODALE */
+.modal-buttons .btn {
+  width: auto; 
+  flex-basis: 0; 
+  min-width: 0; 
+}
+.modal-buttons .btn-text {
+  flex-grow: 1; /* Annuler prend 1 part */
+}
+.modal-buttons .btn-filled {
+  flex-grow: 1.5; /* Ajouter prend 1.5 part (plus grand) */
+}
+/* FIN CORRECTION ALIGNEMENT */
+
 /* Input */
 .input {
   width: 100%;
@@ -210,7 +234,7 @@ body {
   color: var(--md-on-surface);
   font-family: 'Roboto', sans-serif;
   transition: border-color 0.2s;
-  box-shadow: none; /* Pas d'ombre Neumorphic */
+  box-shadow: none;
 }
 
 .input:focus {
@@ -223,7 +247,7 @@ body {
 /* Chips Container (pour les saisons) */
 .chip-container {
     display: flex;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 16px;
     width: 100%; 
@@ -233,7 +257,7 @@ body {
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
-  background: var(--md-surface-variant); /* Conteneur par défaut */
+  background: var(--md-surface-variant);
   cursor: pointer;
   font-size: 14px;
   color: var(--md-on-surface-variant);
@@ -245,7 +269,7 @@ body {
 }
 
 .chip.selected {
-  background: var(--md-secondary-container); /* Couleur Conteneur Secondaire M3 */
+  background: var(--md-secondary-container);
   color: var(--md-on-secondary-container);
   box-shadow: none; 
 }
@@ -274,7 +298,7 @@ body {
     height: 20px;
     border: 2px solid var(--md-on-surface-variant);
     background: var(--md-surface);
-    border-radius: 4px; /* Forme carrée M3 */
+    border-radius: 4px; 
     box-shadow: none; 
     appearance: none;
     position: relative;
@@ -318,7 +342,7 @@ body {
   right: 20px;
   width: 56px;
   height: 56px;
-  border-radius: 16px; /* Carré arrondi M3 */
+  border-radius: 16px;
   background: var(--md-primary);
   color: white;
   border: none;
@@ -352,7 +376,7 @@ body {
   border-top: none;
   padding: 8px 0 max(8px, env(safe-area-inset-bottom));
   z-index: 1000;
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); /* Ombre d'élévation douce */
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .tab-bar .tab-btn {
@@ -376,12 +400,12 @@ body {
 }
 
 .tab-bar .tab-btn:hover {
-  background: rgba(0, 163, 129, 0.08); /* Effet d'ondulation M3 */
+  background: rgba(0, 163, 129, 0.08);
 }
 
 .tab-bar .tab-btn.active {
   color: var(--md-on-secondary-container);
-  background: var(--md-secondary-container); /* Conteneur de couleur M3 pour l'élément actif */
+  background: var(--md-secondary-container); 
   box-shadow: none;
 }
 
@@ -399,4 +423,3 @@ body {
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); 
   }
 }
-/* FIN DU FICHIER STYLES.CSS */
