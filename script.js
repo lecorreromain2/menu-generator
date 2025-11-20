@@ -288,7 +288,14 @@ function getCurrentSeason() {
 
 function getRecentlyUsedDishes() {
   const currentWeek = getWeekNumber(new Date());
-  const recentMenus = menus.filter(m => currentWeek - m.weekNumber <= 3 && currentWeek - m.weekNumber >= 0);
+  
+  // Correction: Ajouter une vérification pour s'assurer que 'm' et 'm.weekNumber' existent
+  const recentMenus = menus.filter(m => 
+    m && m.weekNumber !== undefined && // <-- AJOUT DE LA VÉRIFICATION
+    currentWeek - m.weekNumber <= 3 && 
+    currentWeek - m.weekNumber >= 0
+  );
+  
   const usedDishIds = new Set();
   recentMenus.forEach(menu => {
     menu.schedule.forEach(day => {
@@ -705,10 +712,12 @@ function listenToFirebase() {
       return;
     }
 
-    const dishesArray = Object.entries(data).map(([key, value]) => ({
-      ...value,
-      id: key
-    }));
+    const dishesArray = Object.entries(data)
+      .filter(([, value]) => value !== null) // <-- AJOUT DE LA VÉRIFICATION
+      .map(([key, value]) => ({
+        ...value,
+        id: key
+      }));
 
     dishes = Object.values(
       dishesArray.reduce((acc, dish) => {
@@ -737,10 +746,12 @@ function listenToFirebase() {
       return;
     }
 
-    const menusArray = Object.entries(data).map(([key, value]) => ({
-      ...value,
-      id: key
-    }));
+    const menusArray = Object.entries(data)
+      .filter(([, value]) => value !== null) // <-- AJOUT DE LA VÉRIFICATION
+      .map(([key, value]) => ({
+        ...value,
+        id: key
+      }));
 
     menus = Object.values(
       menusArray.reduce((acc, menu) => {
