@@ -148,14 +148,13 @@ body {
 }
 
 .card-title {
-  /* CORRECTION HOMOGÉNÉITÉ: Taille du texte augmentée et espacement accru */
   font-size: 20px; 
   font-weight: 500;
   color: var(--md-on-surface);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 12px; /* Augmentation de l'espace entre l'icône et le texte */
+  gap: 12px; 
 }
 
 /* Dish Cards */
@@ -170,7 +169,15 @@ body {
   box-shadow: none;
 }
 
-/* Icon Button */
+/* CORRECTION ESPACEMENT ACTIONS */
+.dish-actions {
+    display: flex;
+    gap: 16px; /* Espacement accru entre les boutons d'action */
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Icon Button (Modifier/Supprimer) */
 .icon-btn {
   background: var(--md-surface);
   border: none;
@@ -422,7 +429,6 @@ body {
 
 /* Global Material Icons Size for titles */
 .material-icons {
-    font-size: 24px; /* Augmentation de la taille des icônes dans les titres pour correspondre au nouveau font-size */
+    font-size: 24px; 
     vertical-align: middle;
 }
-/* FIN DU FICHIER STYLES.CSS */
