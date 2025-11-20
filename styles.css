@@ -133,7 +133,11 @@ body {
   background: var(--neumo-bg);
   border-radius: 28px;
   padding: 24px;
-  margin-bottom: 16px;
+  /* Augmenter la largeur maximale pour plus d'espace */
+  max-width: 90%; 
+  width: 450px; /* Largeur fixe plus confortable */
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: var(--neumo-shadow-out); 
 }
 
@@ -385,4 +389,56 @@ body {
   }
 }
 
-/* ... (Fin du reste des styles) ... */
+/* Nouvelles classes pour la section Catégories (sans ombre) */
+
+.category-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.plain-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0; /* Espacement réduit pour compacité */
+  cursor: pointer;
+  border-radius: 8px;
+  /* AUCUN FOND, AUCUNE OMBRE POUR CETTE SECTION */
+  background: none; 
+  box-shadow: none; 
+}
+
+/* Style du checkbox lui-même (garder l'aspect enfoncé) */
+.plain-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: var(--neumo-bg);
+  border-radius: 6px;
+  box-shadow: var(--neumo-shadow-in); /* Garder l'aspect enfoncé du carré */
+  appearance: none;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.plain-checkbox input[type="checkbox"]:checked {
+  background: var(--md-primary);
+  box-shadow: var(--neumo-shadow-out-small);
+}
+.plain-checkbox input[type="checkbox"]:checked::after {
+  content: '✓';
+  color: white;
+  font-size: 14px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Supprimer l'ancienne classe .checkbox-container (si elle existe) ou la renommer si vous la gardez ailleurs */
+.checkbox-container {
+    /* Masquer ou désactiver si vous utilisez la nouvelle structure */
+    display: none; 
+}
