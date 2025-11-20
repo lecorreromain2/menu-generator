@@ -27,7 +27,7 @@
   --md-outline: #79747E;
   --md-success: #146C2E;
   --md-success-container: #B7F4B9;
-  --md-error: #BA1A1A; /* Rouge d'erreur Material You */
+  --md-error: #BA1A1A; /* Rouge d'erreur Material You standard */
   --md-error-container: #FFDAD6;
   --md-background: #F5F5F5; /* Fond clair standard */
   
@@ -124,8 +124,9 @@ body {
   color: var(--md-primary);
 }
 
+/* MODIFICATION COULEUR BOUTON CRITIQUE */
 .btn-error {
-  background: var(--md-error);
+  background: #C44040; /* Rouge bordeaux doux */
   color: white;
   box-shadow: var(--m3-shadow-1);
 }
@@ -349,12 +350,13 @@ body {
 
 /* STYLES SPÉCIFIQUES CONFIG ET MENU */
 
-/* Amélioration de l'espacement pour l'encart Configuration du groupe */
-.info-text {
-  color: var(--md-on-surface-variant);
+/* NOUVEAUTÉ : Ajustement de l'espacement pour le texte explicatif de l'ID de groupe */
+.group-id-description {
+  margin-top: 16px !important;
+  margin-bottom: 24px !important; /* Plus d'espace avant le bouton */
   font-size: 14px;
+  color: var(--md-on-surface-variant);
   line-height: 1.5;
-  margin-bottom: 16px; /* Marge par défaut */
 }
 
 .group-id-display {
@@ -367,12 +369,6 @@ body {
   margin-bottom: 8px;
   word-break: break-all;
   border: 1px dashed var(--md-outline); 
-}
-
-/* NOUVEAU: Ajustement de l'espacement pour le texte explicatif de l'ID de groupe */
-.group-id-description {
-  margin-top: 16px !important;
-  margin-bottom: 24px !important; /* Plus d'espace avant le bouton */
 }
 
 /* Styles Menu (Déjeuner/Dîner en colonnes) */
