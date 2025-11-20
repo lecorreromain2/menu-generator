@@ -1096,8 +1096,9 @@ if (dishNameInput) {
       return;
     }
 
+    // MISE À JOUR : Ajout de la classe sugg-heading
     dishSuggestions.innerHTML = `
-      <div style="font-weight:600;color:#555;margin-bottom:2px;">Suggestions :</div>
+      <div class="sugg-heading">Suggestions :</div>
       ${suggestions.map(d => `<div class="sugg-item">${d.name}</div>`).join('')}
     `;
 
