@@ -407,4 +407,11 @@ body {
   }
 }
 
+.modal-buttons {
+  display: flex; /* Active la disposition flexible */
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: flex-end; /* Aligne les boutons à droite */
+}
+
 /* ... (Fin du reste des styles) ... */
