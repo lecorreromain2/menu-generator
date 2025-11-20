@@ -47,13 +47,14 @@ function generateMenu(targetWeekNumber = null) {
   const schedule = [];
   const usedInMenu = new Map(); // Compte combien de fois chaque plat est utilisé
 
-  for (let i = 0; i < 7; i++) {
+for (let i = 0; i < 7; i++) {
     const day = daysOfWeek[i];
     const isSportDay = menuConfig.sportDays.includes(day);
     
     // === DÉJEUNER ===
     let lunchDish = null;
-    if (menuConfig.mealDuration.lunch === 2 && i > 0 && schedule[i - 1].lunch) {
+    // Correction: Répéter uniquement si la durée est > 1 ET que l'on n'est PAS au début d'un nouveau cycle de répétition
+    if (menuConfig.mealDuration.lunch > 1 && i > 0 && (i % menuConfig.mealDuration.lunch) !== 0 && schedule[i - 1].lunch) {
       // Répéter le plat du jour précédent
       lunchDish = schedule[i - 1].lunch;
     } else {
@@ -69,7 +70,8 @@ function generateMenu(targetWeekNumber = null) {
 
     // === DÎNER ===
     let dinnerDish = null;
-    if (menuConfig.mealDuration.dinner === 2 && i > 0 && schedule[i - 1].dinner) {
+    // Correction: Répéter uniquement si la durée est > 1 ET que l'on n'est PAS au début d'un nouveau cycle de répétition
+    if (menuConfig.mealDuration.dinner > 1 && i > 0 && (i % menuConfig.mealDuration.dinner) !== 0 && schedule[i - 1].dinner) {
       // Répéter le plat du jour précédent
       dinnerDish = schedule[i - 1].dinner;
     } else {
