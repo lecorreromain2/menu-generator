@@ -347,8 +347,21 @@ body {
   box-shadow: none; 
 }
 
-/* NOUVEAUX STYLES CRITIQUES POUR LA MISE EN PAGE DU MENU */
+/* STYLES SPÉCIFIQUES CONFIG ET MENU */
 
+.group-id-display {
+  background: var(--md-surface-variant); /* Fond discret */
+  padding: 12px;
+  border-radius: 12px;
+  font-family: 'Roboto Mono', monospace; /* Police monospace pour l'ID */
+  font-size: 14px;
+  color: var(--md-on-surface);
+  margin-bottom: 8px;
+  word-break: break-all;
+  border: 1px dashed var(--md-outline); /* Bordure en pointillé */
+}
+
+/* Styles Menu (Déjeuner/Dîner en colonnes) */
 .day-header-new {
     display: flex;
     justify-content: space-between;
@@ -357,7 +370,7 @@ body {
 }
 
 .day-name-large {
-    font-size: 20px; /* Jour plus visible */
+    font-size: 20px; 
     font-weight: 700;
     color: var(--md-on-surface);
 }
@@ -366,7 +379,7 @@ body {
     background: var(--md-primary);
     color: var(--md-on-primary);
     padding: 6px 12px;
-    border-radius: 16px; /* Tag style pilule */
+    border-radius: 16px; 
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.5px;
@@ -374,7 +387,7 @@ body {
 
 .meal-grid {
     display: grid;
-    grid-template-columns: 1fr auto 1fr; /* 1 colonne gauche, 1 séparateur, 1 colonne droite */
+    grid-template-columns: 1fr auto 1fr; 
     gap: 8px;
 }
 
@@ -389,7 +402,7 @@ body {
 }
 
 .meal-label {
-    font-weight: 500; /* Plus de poids pour le titre (Déjeuner/Dîner) */
+    font-weight: 500; 
     color: var(--md-on-surface-variant);
     font-size: 14px; 
     text-transform: uppercase;
@@ -402,22 +415,8 @@ body {
     font-size: 16px; 
     font-weight: 400;
 }
-/* FIN NOUVEAUX STYLES */
+/* FIN STYLES SPÉCIFIQUES */
 
-/* Menu Collapse (Fonctionnalité) */
-.menu-collapse {
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height .3s ease;
-}
-
-.menu-collapse.open {
-  max-height: 2000px; 
-}
-/* Fin Menu Collapse */
-
-
-/* ... (Reste des styles M3) ... */
 
 /* !!! CRITIQUE : Assurer le masquage !!! */
 .hidden {
@@ -441,6 +440,17 @@ body {
   box-shadow: var(--m3-shadow-2); 
   cursor:pointer;
   z-index:1000;
+}
+
+/* Menu Collapse (Fonctionnalité) */
+.menu-collapse {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .3s ease;
+}
+
+.menu-collapse.open {
+  max-height: 2000px; 
 }
 
 /* Tab Content */
