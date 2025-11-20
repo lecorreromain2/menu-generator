@@ -97,7 +97,35 @@ body {
   background: var(--md-primary);
   box-shadow: var(--neumo-shadow-in);
 }
-/* ... (autres styles de boutons conservés) ... */
+
+.btn-filled-tonal {
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+  box-shadow: var(--neumo-shadow-out-small);
+}
+
+.btn-outlined {
+  border: none;
+  box-shadow: var(--neumo-shadow-out-small);
+}
+
+.btn-text {
+  background: transparent;
+  box-shadow: none;
+  color: var(--md-primary);
+}
+.btn-text:active {
+    box-shadow: inset 2px 2px 4px var(--neumo-dark), inset -2px -2px 4px var(--neumo-light);
+}
+
+.btn-error {
+  background: var(--md-error);
+  color: white;
+  box-shadow: var(--neumo-shadow-out);
+}
+.btn-error:active {
+    box-shadow: var(--neumo-shadow-in);
+}
 
 /* Cards */
 .card,
@@ -107,6 +135,16 @@ body {
   padding: 24px;
   margin-bottom: 16px;
   box-shadow: var(--neumo-shadow-out); 
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--md-on-surface);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Dish Cards */
@@ -120,7 +158,48 @@ body {
   justify-content: space-between;
   align-items: center;
 }
-/* ... (autres styles d'icônes et de tags conservés) ... */
+
+/* Icon Button */
+.icon-btn {
+  background: var(--neumo-bg);
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--md-primary);
+  border-radius: 50%;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--neumo-shadow-out-small);
+}
+
+.icon-btn:hover {
+  background: var(--neumo-bg);
+}
+.icon-btn:active {
+    box-shadow: var(--neumo-shadow-in);
+}
+
+/* Modal */
+.modal {
+  /* Le modal n'a pas la classe hidden, il utilise 'display: none' par défaut */
+  display: none; 
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3); 
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal.active {
+  display: flex;
+}
 
 /* Input */
 .input {
@@ -156,12 +235,61 @@ body {
   color: var(--md-on-secondary-container);
   box-shadow: var(--neumo-shadow-in); 
 }
-/* ... (autres styles de checkbox et de jour conservés) ... */
 
-/* ELEMENTS CACHÉS/AFFICHER */
+/* Checkbox */
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 0.2s;
+  background: var(--neumo-bg);
+  box-shadow: var(--neumo-shadow-out-small);
+}
+
+.checkbox input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: var(--neumo-bg);
+  border-radius: 8px;
+  box-shadow: var(--neumo-shadow-in);
+  appearance: none;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.checkbox input[type="checkbox"]:checked {
+  background: var(--md-primary);
+  box-shadow: var(--neumo-shadow-out-small);
+}
+.checkbox input[type="checkbox"]:checked::after {
+  content: '✓';
+  color: white;
+  font-size: 16px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Day Card */
+.day-card {
+  background: var(--neumo-bg);
+  padding: 16px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  box-shadow: var(--neumo-shadow-out-small); 
+}
+
+/* !!! CORRECTION CRITIQUE !!! */
+/* Le masquage doit être prioritaire pour cacher les blocs au chargement */
 .hidden {
   display: none !important;
 }
+/* !!! FIN CORRECTION CRITIQUE !!! */
 
 /* FAB (Bouton d'ajout/génération) */
 .fab {
@@ -177,12 +305,23 @@ body {
   display:flex;
   align-items:center;
   justify-content:center;
-  box-shadow: var(--neumo-shadow-out); /* Rendu en relief plus moderne */
+  box-shadow: var(--neumo-shadow-out); 
   cursor:pointer;
   z-index:1000;
 }
 .fab:active {
   box-shadow: var(--neumo-shadow-in);
+}
+
+/* Tab Content */
+/* S'assurer que les onglets inactifs sont bien masqués, même sans la classe .hidden sur le conteneur principal */
+.tab-content {
+  display: none;
+  padding-bottom: 80px; 
+}
+
+.tab-content.active {
+  display: block;
 }
 
 /* Bottom Tab Bar */
@@ -197,7 +336,6 @@ body {
   border-top: none;
   padding: 8px 0 max(8px, env(safe-area-inset-bottom));
   z-index: 1000;
-  /* Utilisation d'une ombre douce et simple pour l'ensemble du bloc barre */
   box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.08);
 }
 
@@ -218,20 +356,17 @@ body {
   gap: 4px;
   font-family: 'Roboto', sans-serif;
   font-weight: 500;
-  /* Pas d'ombre par défaut pour un aspect plus moderne */
   box-shadow: none;
 }
 
 .tab-bar .tab-btn:hover {
   background: var(--neumo-bg);
-  /* Léger relief au survol */
   box-shadow: 1px 1px 3px var(--neumo-dark), -1px -1px 3px var(--neumo-light);
 }
 
 .tab-bar .tab-btn.active {
   color: var(--md-primary);
   background: var(--neumo-bg);
-  /* Bouton actif "enfoncé" (concave) */
   box-shadow: var(--neumo-shadow-in); 
 }
 
@@ -246,8 +381,8 @@ body {
     left: 50%;
     transform: translateX(-50%);
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.08); /* Conserver l'ombre douce */
+    box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.08); 
   }
 }
 
-/* ... (Fin des styles conservés) ... */
+/* ... (Fin du reste des styles) ... */
