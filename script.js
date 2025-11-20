@@ -347,4 +347,788 @@ function getRecentlyUsedDishes() {
     currentWeek - m.weekNumber >= 0
   );
   
-  const usedDishIds = new Set
+  const usedDishIds = new Set();
+  recentMenus.forEach(menu => {
+    menu.schedule.forEach(day => {
+      if (day.lunch) usedDishIds.add(day.lunch.id);
+      if (day.dinner) usedDishIds.add(day.dinner.id);
+    });
+  });
+  return usedDishIds;
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.add('active');
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('active');
+}
+
+// ===== PWA =====
+
+let deferredPrompt;
+
+function setupPWA() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+      console.log('✅ Service Worker enregistré');
+    }).catch(err => {
+      console.error('❌ Erreur SW:', err);
+    });
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const prompt = document.getElementById('installPrompt');
+    if (prompt) prompt.classList.remove('hidden');
+  });
+
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    console.log('✅ App installée');
+  }
+}
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('✅ Installation acceptée');
+        const prompt = document.getElementById('installPrompt');
+        if (prompt) prompt.classList.add('hidden');
+      }
+      deferredPrompt = null;
+    });
+  }
+}
+
+// ===== TOOLTIP =====
+
+function setupTooltip() {
+  const syncIcon = document.getElementById('syncIcon');
+  const tooltip = document.getElementById('tooltip');
+  
+  if (!syncIcon) return;
+
+  let touchTimer;
+  syncIcon.addEventListener('touchstart', (e) => {
+    touchTimer = setTimeout(() => {
+      showToast(`Groupe : ${groupId}`, 2000);
+    }, 500);
+  });
+  syncIcon.addEventListener('touchend', () => {
+    clearTimeout(touchTimer);
+  });
+}
+
+function toggleMenuContent(id) {
+  const content = document.getElementById(id);
+  const icon = document.getElementById('icon-' + id);
+
+  const isOpen = content.classList.contains('open');
+
+  if (isOpen) {
+    content.classList.remove('open');
+    icon.textContent = 'expand_more';
+  } else {
+    content.classList.add('open');
+    icon.textContent = 'expand_less';
+  }
+}
+
+// ===== INITIALISATION =====
+
+window.onload = function() {
+  console.log('🌐 Chargement...');
+  
+  initSeasonChips();
+  initSportDaysChips();
+  setupTooltip();
+  
+  if (groupId) {
+    console.log('🔗 Groupe existant:', groupId);
+    showMainApp();
+    listenToFirebase();
+  } else {
+    console.log('🕓 Aucun groupe');
+  }
+
+  setupPWA();
+};
+
+
+//== NOTIFICATIONS =====
+
+function showToast(message, duration = 3000) {
+  const toast = document.getElementById('customToast');
+  const toastMsg = document.getElementById('toastMessage');
+  if (toast && toastMsg) {
+    toastMsg.textContent = message;
+    toast.classList.remove('hidden');
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.classList.add('hidden'), 300);
+    }, duration);
+  }
+}
+
+function updateSyncIcon(syncing, error = false) {
+  const indicator = document.getElementById('syncIndicator');
+  const icon = document.getElementById('syncIcon');
+  
+  if (!indicator || !icon) return;
+  
+  if (syncing) {
+    indicator.classList.remove('hidden', 'error');
+    icon.textContent = 'sync';
+  } else if (error) {
+    indicator.classList.remove('hidden');
+    indicator.classList.add('error');
+    icon.textContent = 'error';
+  } else {
+    indicator.classList.remove('hidden', 'error');
+    icon.textContent = 'check_circle';
+  }
+}
+
+// ===== GROUPE =====
+
+function showGroupTypeSelection() {
+  document.getElementById('groupTypeSelection').classList.remove('hidden');
+  document.getElementById('joinGroupForm').classList.add('hidden');
+}
+
+function showCreateGroup() {
+  document.getElementById('groupTypeSelection').classList.add('hidden');
+  document.getElementById('joinGroupForm').classList.add('hidden');
+  
+  const newGroupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  groupId = newGroupId;
+  localStorage.setItem('groupId', groupId);
+  
+  showToast('✅ Groupe créé !');
+  alert('ID du groupe :\n\n' + groupId + '\n\nPartagez cet ID avec vos amis !');
+  
+  showMainApp();
+  listenToFirebase();
+}
+
+function showJoinGroup() {
+  document.getElementById('groupTypeSelection').classList.add('hidden');
+  document.getElementById('joinGroupForm').classList.remove('hidden');
+}
+
+function joinGroup() {
+  const input = document.getElementById('groupIdInput').value.trim();
+  if (!input) {
+    showToast('❌ Veuillez entrer un ID de groupe');
+    return;
+  }
+  
+  groupId = input;
+  localStorage.setItem('groupId', groupId);
+  
+  showMainApp();
+  listenToFirebase();
+  showToast('✅ Groupe rejoint !');
+}
+
+function showMainApp() {
+  document.getElementById('groupSetup').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('syncIndicator').classList.remove('hidden');
+  document.getElementById('tabBar').classList.remove('hidden');
+  
+  const syncIcon = document.getElementById('syncIcon');
+  if (syncIcon) {
+    syncIcon.title = `Groupe : ${groupId}`;
+  }
+  
+  const el = document.getElementById('currentGroupIdDisplay');
+if (el) el.textContent = groupId;
+  
+  // Afficher l'onglet recettes par défaut
+  switchToTab('dishes');
+}
+
+function leaveGroup() {
+  if (confirm('⚠️ Voulez-vous vraiment quitter ce groupe ?')) {
+    localStorage.removeItem('groupId');
+    location.reload();
+  }
+}
+
+// ------- Copier l'ID du groupe (robuste + fallback) -------
+function copyGroupId() {
+  // Récupère l'ID soit depuis la variable globale, soit depuis l'affichage si vide
+  const id = (typeof groupId !== 'undefined' && groupId) ? groupId :
+             (document.getElementById('currentGroupIdDisplay')?.textContent || '').trim();
+
+  if (!id) {
+    showToast('❌ Aucun ID de groupe disponible');
+    return;
+  }
+
+  const flashCopyIcon = () => {
+    // Cherche le bouton par son onclick (compatible même si tu n'as pas donné d'id)
+    const btn = document.querySelector('button[onclick="copyGroupId()"]') || document.getElementById('copyGroupBtn');
+    if (!btn) return;
+    const icon = btn.querySelector('.material-icons') || btn;
+    const old = icon.textContent;
+    icon.textContent = 'check';
+    setTimeout(() => { icon.textContent = old; }, 1000);
+  };
+
+  // Méthode moderne (nécessite https:// ou localhost)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(id).then(() => {
+      showToast('📋 ID copié !');
+      flashCopyIcon();
+    }).catch((err) => {
+      console.warn('Clipboard API failed, fallback:', err);
+      // fallback
+      fallbackCopy(id, flashCopyIcon);
+    });
+    return;
+  }
+
+  // Si Clipboard API non disponible → fallback
+  fallbackCopy(id, flashCopyIcon);
+}
+
+function fallbackCopy(text, onSuccess) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    // évite le focus scroll
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+
+    if (ok) {
+      showToast('📋 ID copié (fallback) !');
+      if (typeof onSuccess === 'function') onSuccess();
+    } else {
+      // dernier recours : affiche le prompt pour copier manuellement
+      prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
+    }
+  } catch (e) {
+    console.error('fallbackCopy error', e);
+    prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
+  }
+}
+
+// ===== ONGLETS =====
+
+function switchToTab(tabName) {
+  console.log('📂 Changement d\'onglet:', tabName);
+  
+  // Masquer tous les onglets
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.classList.remove('active');
+    tab.classList.add('hidden');
+  });
+  
+  // Désactiver tous les boutons de la tabbar
+  document.querySelectorAll('.tab-bar .tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Afficher l'onglet sélectionné
+  const tabEl = document.getElementById(`${tabName}Tab`);
+  if (tabEl) {
+    tabEl.classList.add('active');
+    tabEl.classList.remove('hidden');
+  }
+  
+  // Activer le bouton correspondant
+  const activeBtn = document.querySelector(`.tab-bar .tab-btn[data-tab="${tabName}"]`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+  }
+  
+  // Mettre à jour l'affichage selon l'onglet
+  if (tabName === 'dishes') {
+    updateDishesTab();
+  } else if (tabName === 'menus') {
+    updateMenusTab();
+  } else if (tabName === 'config') {
+    updateConfigDisplay();
+  }
+  document.getElementById('fabAdd')?.classList.toggle('hidden', tabName !== 'dishes');
+  document.getElementById('fabMenu')?.classList.toggle('hidden', tabName !== 'menus');
+}
+
+function updateDishesTab() {
+  const list = document.getElementById('dishesList');
+  const empty = document.getElementById('noDishes');
+  // Vérifier la présence des cartes plutôt que la liste globale
+  const hasItems = document.querySelectorAll('#dishesContainer .dish-card').length > 0;
+
+  if (hasItems) {
+    if (list) list.classList.remove('hidden');
+    if (empty) empty.classList.add('hidden');
+  } else {
+    if (list) list.classList.add('hidden');
+    if (empty) empty.classList.remove('hidden');
+  }
+}
+
+function updateMenusTab() {
+  const empty = document.getElementById('noMenus');
+  const hasItems = document.querySelectorAll('#menusList .card').length > 0;
+
+  if (hasItems) {
+    if (empty) empty.classList.add('hidden');
+  } else {
+    if (empty) empty.classList.remove('hidden');
+  }
+}
+
+function updateConfigDisplay() {
+  // Mettre à jour l'affichage des chips de jours de sport
+  const sportDaysContainer = document.getElementById('sportDaysChipsDisplay');
+  // Sécurité pour la liste de jours de sport
+  const sportDaysList = menuConfig.sportDays || [];
+  
+  if (sportDaysContainer && sportDaysContainer.children.length === 0) {
+    daysOfWeek.forEach(day => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = day;
+      chip.id = 'sport_display_' + day;
+      chip.onclick = () => toggleSportDay(day);
+      if (sportDaysList.includes(day)) {
+        chip.classList.add('selected');
+      }
+      sportDaysContainer.appendChild(chip);
+    });
+  } else if (sportDaysContainer) {
+    // Si les chips existent déjà, mettre à jour leur état 'selected'
+    daysOfWeek.forEach(day => {
+        const chipDisplay = document.getElementById('sport_display_' + day);
+        if (chipDisplay) {
+          chipDisplay.classList.toggle('selected', sportDaysList.includes(day));
+        }
+    });
+  }
+
+  // NOUVEAUTÉ: Mettre à jour l'affichage des chips de saisons
+  const seasonDaysContainer = document.getElementById('seasonFilterChipsDisplay');
+  const activeSeasonsList = menuConfig.activeSeasons || [];
+  
+  if (seasonDaysContainer && seasonDaysContainer.children.length === 0) {
+    seasons.forEach(season => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = season;
+      // Ajout de l'ID pour pouvoir le mettre à jour dans updateConfigUI
+      chip.id = 'season_display_' + season; 
+      // Nouvelle fonction de toggle
+      chip.onclick = () => toggleConfigSeason(season); 
+      if (activeSeasonsList.includes(season)) {
+        chip.classList.add('selected');
+      }
+      seasonDaysContainer.appendChild(chip);
+    });
+  } else if (seasonDaysContainer) {
+    // Si les chips existent déjà, mettre à jour leur état 'selected'
+    seasons.forEach(season => {
+        const chipDisplay = document.getElementById('season_display_' + season);
+        if (chipDisplay) {
+          chipDisplay.classList.toggle('selected', activeSeasonsList.includes(season));
+        }
+    });
+  }
+  
+  // Mettre à jour l'ID du groupe
+  const groupIdDisplay = document.getElementById('currentGroupIdDisplay');
+  if (groupIdDisplay) {
+    groupIdDisplay.textContent = groupId;
+  }
+  
+  // Mettre à jour les chips de durée des repas
+  updateConfigUI(); 
+}
+ 
+// ===== FIREBASE =====
+
+function listenToFirebase() {
+  if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
+    console.warn('⏳ Firebase non initialisé');
+    setTimeout(listenToFirebase, 500);
+    return;
+  }
+
+  if (!database) {
+    console.warn('❌ Base non initialisée');
+    return;
+  }
+  
+  if (!groupId) {
+    console.warn('⛔ Aucun groupId');
+    showToast('❌ Aucun groupe sélectionné');
+    return;
+  }
+
+  console.log('🎧 Écoute Firebase:', groupId);
+
+  database.ref().off();
+
+  const dishesRef = database.ref(`groups/${groupId}/dishes`);
+  const menusRef = database.ref(`groups/${groupId}/menus`);
+  const configRef = database.ref(`groups/${groupId}/config`);
+
+  dishesRef.on('value', snapshot => {
+    const data = snapshot.val();
+    console.log('📡 Plats Firebase:', data);
+    
+    if (!data) {
+      console.warn('⚠️ Aucun plat');
+      dishes = [];
+      renderDishes();
+      updateSyncIcon(false);
+      return;
+    }
+
+    // Correction: Filtrer les entrées nulles et undefined
+    const dishesArray = Object.entries(data)
+      .filter(([, value]) => value !== null && value !== undefined)
+      .map(([key, value]) => ({
+      ...value,
+      id: key
+    }));
+
+    dishes = Object.values(
+      dishesArray.reduce((acc, dish) => {
+        if (!acc[dish.name] || acc[dish.name].id < dish.id) {
+          acc[dish.name] = dish;
+        }
+        return acc;
+      }, {})
+    );
+
+    console.log('✅ Plats:', dishes.length);
+    renderDishes();
+    updateSyncIcon(false);
+  }, error => {
+    console.error('❌ Erreur dishes:', error);
+    updateSyncIcon(false, true);
+  });
+
+  menusRef.on('value', snapshot => {
+    const data = snapshot.val();
+    console.log('📡 Menus Firebase:', data);
+    
+    if (!data) {
+      menus = [];
+      renderMenus();
+      return;
+    }
+
+    // Correction: Filtrer les entrées nulles et undefined
+    const menusArray = Object.entries(data)
+      .filter(([, value]) => value !== null && value !== undefined)
+      .map(([key, value]) => ({
+      ...value,
+      id: key
+    }));
+
+    menus = Object.values(
+      menusArray.reduce((acc, menu) => {
+        if (!acc[menu.weekNumber] || acc[menu.weekNumber].id < menu.id) {
+          acc[menu.weekNumber] = menu;
+        }
+        return acc;
+      }, {})
+    ).sort((a, b) => b.weekNumber - a.weekNumber);
+
+    console.log('✅ Menus:', menus.length);
+    renderMenus();
+  }, error => {
+    console.error('❌ Erreur menus:', error);
+  });
+
+  configRef.on('value', snapshot => {
+    const data = snapshot.val();
+    
+    // CORRECTION CRITIQUE: Assurer que les propriétés par défaut existent
+    const defaults = { 
+        sportDays: [], 
+        activeSeasons: seasons, // NOUVEAU: Par défaut, toutes les saisons sont actives
+        mealDuration: { lunch: 1, dinner: 1 } 
+    }; 
+    
+    if (data) {
+      // Fusionne les valeurs par défaut avec les données existantes (pour ne pas perdre activeSeasons si manquant)
+      menuConfig = { ...defaults, ...data }; 
+      updateConfigUI();
+      console.log('✅ Config:', menuConfig);
+    } else {
+      menuConfig = defaults;
+      updateConfigUI();
+      console.log('✅ Config (défaut):', menuConfig);
+    }
+  }, error => {
+    console.error('❌ Erreur config:', error);
+  });
+}
+
+// ===== PLATS =====
+
+function initSeasonChips() {
+  const container = document.getElementById('seasonsChips');
+  if (!container) return;
+  seasons.forEach(season => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = season;
+    chip.onclick = () => toggleSeasonChip(season, chip);
+    container.appendChild(chip);
+  });
+}
+
+function initSportDaysChips() {
+  const container = document.getElementById('sportDaysChips');
+  if (!container) return;
+  daysOfWeek.forEach(day => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = day;
+    chip.id = 'sport_' + day;
+    chip.onclick = () => toggleSportDay(day);
+    container.appendChild(chip);
+  });
+}
+
+function toggleSeasonChip(season, chip) {
+  if (newDishSeasons.includes(season)) {
+    newDishSeasons = newDishSeasons.filter(s => s !== season);
+    chip.classList.remove('selected');
+  } else {
+    newDishSeasons.push(season);
+    chip.classList.add('selected');
+  }
+}
+
+function openAddDishModal() {
+  editingDishId = null;
+  document.getElementById('dishModalTitle').textContent = 'Nouveau plat';
+  document.getElementById('saveDishBtn').textContent = 'Ajouter';
+  document.getElementById('dishName').value = '';
+  
+  // Réinitialiser les saisons
+  newDishSeasons = [];
+  document.querySelectorAll('#seasonsChips .chip').forEach(chip => chip.classList.remove('selected'));
+  
+  // Réinitialiser les checkboxes
+  document.getElementById('sportDay').checked = false;
+  document.getElementById('vegetarian').checked = false;
+  document.getElementById('grillades').checked = false;
+  
+  // Réinitialiser le feedback
+  const dishNameFeedback = document.getElementById('dishNameFeedback');
+  if (dishNameFeedback) dishNameFeedback.textContent = '';
+  const dishSuggestions = document.getElementById('dishSuggestions');
+  if (dishSuggestions) dishSuggestions.innerHTML = '';
+  
+  openModal('addDishModal');
+}
+
+function openEditDishModal(dish) {
+  editingDishId = dish.id;
+  document.getElementById('dishModalTitle').textContent = 'Modifier le plat';
+  document.getElementById('saveDishBtn').textContent = 'Modifier';
+  document.getElementById('dishName').value = dish.name;
+  newDishSeasons = [...dish.seasons];
+  document.querySelectorAll('#seasonsChips .chip').forEach(chip => {
+    chip.classList.toggle('selected', newDishSeasons.includes(chip.textContent));
+  });
+  document.getElementById('sportDay').checked = dish.sportDay || false;
+  document.getElementById('vegetarian').checked = dish.vegetarian || false;
+  document.getElementById('grillades').checked = dish.grillades || false;
+  
+  // Réinitialiser le feedback
+  const dishNameFeedback = document.getElementById('dishNameFeedback');
+  if (dishNameFeedback) dishNameFeedback.textContent = '';
+  const dishSuggestions = document.getElementById('dishSuggestions');
+  if (dishSuggestions) dishSuggestions.innerHTML = '';
+  
+  openModal('addDishModal');
+}
+
+function saveDish() {
+  const name = document.getElementById('dishName').value.trim();
+  if (!name) {
+    showToast('❌ Veuillez entrer un nom de plat');
+    return;
+  }
+
+  // ✅ Vérifier qu'au moins une saison est sélectionnée
+  if (newDishSeasons.length === 0) {
+    showToast('❌ Veuillez sélectionner au moins une saison');
+    return;
+  }
+
+  const dish = {
+    id: editingDishId || Date.now(),
+    name: name,
+    seasons: newDishSeasons,
+    sportDay: document.getElementById('sportDay').checked,
+    vegetarian: document.getElementById('vegetarian').checked,
+    grillades: document.getElementById('grillades').checked
+  };
+
+  updateSyncIcon(true);
+  database.ref(`groups/${groupId}/dishes/${dish.id}`).set(dish);
+  
+  const message = editingDishId ? '✅ Plat modifié !' : '✅ Plat ajouté !';
+  showToast(message);
+  
+  // ✅ Réinitialiser le formulaire
+  editingDishId = null;
+  newDishSeasons = [];
+  
+  closeModal('addDishModal');
+}
+
+function deleteDish(id) {
+  if (confirm('Voulez-vous vraiment supprimer ce plat ?')) {
+    updateSyncIcon(true);
+    database.ref(`groups/${groupId}/dishes/${id}`).remove();
+    showToast('✅ Plat supprimé');
+  }
+}
+
+function renderDishes(dishesArray = dishes) {
+  const container = document.getElementById('dishesContainer');
+  const listCard = document.getElementById('dishesList');
+  const emptyState = document.getElementById('noDishes');
+  const countSpan = document.getElementById('dishCount');
+
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (!dishesArray.length) {
+    if (listCard) listCard.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
+    if (countSpan) countSpan.textContent = '0';
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+  if (listCard) listCard.classList.remove('hidden');
+
+  dishesArray.forEach(dish => {
+    const card = document.createElement('div');
+    card.className = 'dish-card';
+    card.innerHTML = `
+      <div class="dish-info">
+        <h3>${dish.name || 'Sans nom'}</h3>
+        <div class="tags">
+            ${dish.sportDay ? '<span class="tag tag-sport">🏋️ Sport</span>' : ''}
+            ${dish.vegetarian ? '<span class="tag tag-veg">🥦 Végétarien</span>' : ''}
+            ${dish.grillades ? '<span class="tag tag-grill">🔥 Grillades</span>' : ''}
+        </div>
+      </div>
+      <div class="dish-actions">
+        <button class="icon-btn" title="Modifier" onclick='openEditDishModal(${JSON.stringify(dish).replace(/"/g, "&quot;")})'>
+            <span class="material-icons">edit</span>
+        </button>
+        <button class="icon-btn" title="Supprimer" onclick='deleteDish("${dish.id}")'>
+            <span class="material-icons" style="color: var(--md-error);">delete</span>
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  if (countSpan) countSpan.textContent = dishesArray.length.toString();
+  console.log(`🎨 ${dishesArray.length} recettes affichées`);
+}
+
+const dishNameInput = document.getElementById('dishName');
+const dishNameFeedback = document.getElementById('dishNameFeedback');
+const dishSuggestions = document.getElementById('dishSuggestions');
+
+if (dishNameInput) {
+  dishNameInput.addEventListener('input', () => {
+    const value = dishNameInput.value.trim().toLowerCase();
+    
+    // reset affichage si vide
+    if (!value) {
+      dishNameFeedback.textContent = '';
+      dishNameFeedback.className = 'input-feedback';
+      dishSuggestions.innerHTML = '';
+      return;
+    }
+
+    // Vérifier doublon exact
+    const existsExact = dishes.some(d => d.name.toLowerCase() === value);
+    if (existsExact) {
+      dishNameFeedback.textContent = '⚠️ Une recette avec ce nom existe déjà';
+      dishNameFeedback.className = 'input-feedback duplicate';
+    } else {
+      dishNameFeedback.textContent = '✅ Aucun doublon exact';
+      dishNameFeedback.className = 'input-feedback ok';
+    }
+
+    // Suggestions partielles dans le bon ordre
+    const suggestions = dishes
+      .filter(d => d.name.toLowerCase().includes(value))
+      .slice(0, 5);
+
+    if (suggestions.length === 0) {
+      dishSuggestions.innerHTML = '';
+      return;
+    }
+
+    dishSuggestions.innerHTML = `
+      <div style="font-weight:600;color:#555;margin-bottom:2px;">Suggestions :</div>
+      ${suggestions.map(d => `<div class="sugg-item">${d.name}</div>`).join('')}
+    `;
+
+    // Clic sur suggestion = remplir
+    document.querySelectorAll('.sugg-item').forEach(el => {
+      el.addEventListener('click', () => {
+        dishNameInput.value = el.textContent;
+        dishSuggestions.innerHTML = '';
+        dishNameFeedback.textContent = '⚠️ Une recette avec ce nom existe déjà';
+        dishNameFeedback.className = 'input-feedback duplicate';
+      });
+    });
+  });
+}
+
+
+// Exposer les fonctions globalement pour les onclick HTML
+window.showGroupTypeSelection = showGroupTypeSelection;
+window.showCreateGroup = showCreateGroup;
+window.showJoinGroup = showJoinGroup;
+window.joinGroup = joinGroup;
+window.leaveGroup = leaveGroup;
+window.switchToTab = switchToTab;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.openAddDishModal = openAddDishModal;
+window.saveDish = saveDish;
+window.generateMenu = generateMenu;
+window.regenerateMenu = regenerateMenu;
+window.toggleMenuContent = toggleMenuContent;
+window.setMealDuration = setMealDuration;
+window.installApp = installApp;
+window.copyGroupId = copyGroupId;
+window.openEditDishModal = openEditDishModal;
