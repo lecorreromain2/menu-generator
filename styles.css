@@ -1,6 +1,3 @@
-/*
- * Générateur de Menus - Styles Neumorphism Final
- */
 * {
   margin: 0;
   padding: 0;
@@ -8,36 +5,40 @@
 }
 
 :root {
-  --md-primary: #6750A4;
+  /* NOUVELLE PALETTE MATERIAL YOU (Inspirée du Vert Teal #00A381) */
+  --md-primary: #00A381; /* Vert Teal */
   --md-on-primary: #FFFFFF;
+  --md-primary-container: #88FFD0;
+  --md-on-primary-container: #002119;
   
-  /* NOUVELLES COULEURS NEUMORPHIC POUR UN ASPECT PLUS DOUX ET MODERNE */
-  --neumo-bg: #F0F3F5; /* Fond très légèrement gris/bleu */
-  --neumo-light: #F8FBFF; /* Blanc cassé pour le highlight (moins "blanc") */
-  --neumo-dark: #C9D0D8; /* Ombre foncée adoucie */
+  --md-secondary: #5B6B67;
+  --md-secondary-container: #B7F4E5; /* Conteneur Secondaire */
+  --md-on-secondary-container: #1E2321;
   
-  /* NOUVELLES VALEURS D'OMBRES POUR UN EFFET MOINS PRONONCÉ */
-  --neumo-shadow-out: 4px 4px 8px var(--neumo-dark), -4px -4px 8px var(--neumo-light);
-  --neumo-shadow-out-small: 2px 2px 4px var(--neumo-dark), -2px -2px 4px var(--neumo-light);
-  --neumo-shadow-in: inset 3px 3px 6px var(--neumo-dark), inset -3px -3px 6px var(--neumo-light);
+  --md-tertiary-container: #D6E6F8; /* Nouveau Conteneur Tertiaire */
 
-  --md-secondary-container: #E8DEF8;
-  --md-on-secondary-container: #1E192B;
+  --md-surface: #FFFBFE;
+  --md-surface-variant: #E7E0EC;
   --md-on-surface: #1C1B1F;
   --md-on-surface-variant: #49454F;
-  --md-error: #BA1A1A;
-  --md-error-container: #FFDAD6;
+  --md-outline: #79747E;
   --md-success: #146C2E;
   --md-success-container: #B7F4B9;
-  --md-background: var(--neumo-bg);
+  --md-error: #BA1A1A;
+  --md-error-container: #FFDAD6;
+  --md-background: #F5F5F5; /* Fond clair standard */
+  
+  /* OMBRE M3 DOUCE */
+  --m3-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --m3-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 body {
   font-family: 'Roboto', sans-serif;
-  background: var(--neumo-bg);
+  background: var(--md-background);
   min-height: 100vh;
   padding: 16px;
-  padding-bottom: 120px; /* Espace pour TabBar + FAB */
+  padding-bottom: 120px;
   color: var(--md-on-surface);
 }
 
@@ -48,11 +49,11 @@ body {
 
 /* Header */
 .header {
-  background: var(--neumo-bg);
+  background: var(--md-surface);
   padding: 24px;
-  border-radius: 28px;
+  border-radius: 28px; /* Coins arrondis M3 */
   margin-bottom: 16px;
-  box-shadow: var(--neumo-shadow-out); 
+  box-shadow: var(--m3-shadow-1);
 }
 
 .title {
@@ -72,8 +73,8 @@ body {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: var(--neumo-shadow-out-small); 
-  background: var(--neumo-bg);
+  box-shadow: var(--m3-shadow-1);
+  background: var(--md-surface);
   color: var(--md-primary);
   display: flex;
   align-items: center;
@@ -84,34 +85,34 @@ body {
 }
 
 .btn:hover {
-  box-shadow: var(--neumo-shadow-out);
+  box-shadow: var(--m3-shadow-2);
 }
 
 .btn:active {
-  box-shadow: var(--neumo-shadow-in); 
-  transform: none;
+  transform: scale(0.98);
 }
 
 .btn-filled, .fab {
   background: var(--md-primary);
   color: var(--md-on-primary);
-  box-shadow: var(--neumo-shadow-out);
+  box-shadow: var(--m3-shadow-2); /* Plus d'élévation sur le filled */
 }
 
 .btn-filled:active, .fab:active {
-  background: var(--md-primary);
-  box-shadow: var(--neumo-shadow-in);
+  box-shadow: var(--m3-shadow-1);
 }
 
 .btn-filled-tonal {
   background: var(--md-secondary-container);
   color: var(--md-on-secondary-container);
-  box-shadow: var(--neumo-shadow-out-small);
+  box-shadow: var(--m3-shadow-1);
 }
 
 .btn-outlined {
-  border: none;
-  box-shadow: var(--neumo-shadow-out-small);
+  background: transparent;
+  border: 1px solid var(--md-outline);
+  color: var(--md-primary);
+  box-shadow: none;
 }
 
 .btn-text {
@@ -119,62 +120,45 @@ body {
   box-shadow: none;
   color: var(--md-primary);
 }
-.btn-text:active {
-    box-shadow: inset 2px 2px 4px var(--neumo-dark), inset -2px -2px 4px var(--neumo-light);
-}
 
 .btn-error {
   background: var(--md-error);
   color: white;
-  box-shadow: var(--neumo-shadow-out);
-}
-.btn-error:active {
-    box-shadow: var(--neumo-shadow-in);
+  box-shadow: var(--m3-shadow-1);
 }
 
 /* Cards */
 .card,
 .modal-content {
-  background: var(--neumo-bg);
-  border-radius: 28px;
+  background: var(--md-surface);
+  border-radius: 16px; /* Coins légèrement moins arrondis pour les cartes */
   padding: 24px;
   margin-bottom: 16px;
-  box-shadow: var(--neumo-shadow-out); 
+  box-shadow: var(--m3-shadow-1);
 }
 
 .modal-content {
-  /* Largeur optimisée pour la modale */
   max-width: 90%; 
   width: 450px; 
   max-height: 90vh;
   overflow-y: auto;
 }
 
-.card-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--md-on-surface);
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 /* Dish Cards */
 .dish-card {
-  background: var(--neumo-bg);
-  border-radius: 20px;
+  background: var(--md-tertiary-container); /* Utilisation du conteneur Tertiaire pour un fond différent */
+  border-radius: 16px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: var(--neumo-shadow-out-small); 
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: none; /* Pas d'ombre sur les petits éléments M3 */
 }
 
 /* Icon Button */
 .icon-btn {
-  background: var(--neumo-bg);
+  background: var(--md-surface);
   border: none;
   cursor: pointer;
   padding: 8px;
@@ -184,11 +168,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--neumo-shadow-out-small);
+  box-shadow: none;
+}
+
+.icon-btn:hover {
+  background: rgba(0, 163, 129, 0.1); /* Teal transparent au survol */
 }
 
 .icon-btn:active {
-    box-shadow: var(--neumo-shadow-in);
+    transform: scale(0.95);
 }
 
 /* Modal */
@@ -214,21 +202,28 @@ body {
 .input {
   width: 100%;
   padding: 16px;
-  border: none;
+  border: 1px solid var(--md-outline);
   border-radius: 12px;
   font-size: 16px;
   margin-bottom: 16px;
-  background: var(--neumo-bg);
+  background: var(--md-surface);
   color: var(--md-on-surface);
-  box-shadow: var(--neumo-shadow-in); 
   font-family: 'Roboto', sans-serif;
-  transition: box-shadow 0.2s;
+  transition: border-color 0.2s;
+  box-shadow: none; /* Pas d'ombre Neumorphic */
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--md-primary);
+  border-width: 2px;
+  padding: 15px;
 }
 
 /* Chips Container (pour les saisons) */
 .chip-container {
     display: flex;
-    flex-wrap: wrap; /* Mise en ligne avec retour à la ligne si pas assez de place */
+    flex-wrap: wrap; 
     gap: 8px;
     margin-bottom: 16px;
     width: 100%; 
@@ -236,26 +231,26 @@ body {
 
 .chip {
   padding: 8px 16px;
-  border-radius: 12px;
+  border-radius: 8px;
   border: none;
-  background: var(--neumo-bg);
+  background: var(--md-surface-variant); /* Conteneur par défaut */
   cursor: pointer;
   font-size: 14px;
   color: var(--md-on-surface-variant);
   transition: all 0.2s;
   font-weight: 500;
-  box-shadow: var(--neumo-shadow-out-small); 
+  box-shadow: none; 
   flex-grow: 0;
   flex-shrink: 0;
 }
 
 .chip.selected {
-  background: var(--md-secondary-container);
+  background: var(--md-secondary-container); /* Couleur Conteneur Secondaire M3 */
   color: var(--md-on-secondary-container);
-  box-shadow: var(--neumo-shadow-in); 
+  box-shadow: none; 
 }
 
-/* Catégories (Nouveaux styles pour la section sans ombre) */
+/* Catégories (Styles plats M3) */
 .category-container {
     display: flex;
     flex-direction: column;
@@ -270,7 +265,6 @@ body {
     padding: 8px 0;
     cursor: pointer;
     border-radius: 8px;
-    /* PAS D'OMBRE NEUMORPHIC pour un look épuré */
     background: none; 
     box-shadow: none; 
 }
@@ -278,18 +272,20 @@ body {
 .plain-checkbox input[type="checkbox"] {
     width: 20px;
     height: 20px;
-    border: none;
-    background: var(--neumo-bg);
-    border-radius: 6px;
-    box-shadow: var(--neumo-shadow-in); /* Garder l'aspect enfoncé du carré */
+    border: 2px solid var(--md-on-surface-variant);
+    background: var(--md-surface);
+    border-radius: 4px; /* Forme carrée M3 */
+    box-shadow: none; 
     appearance: none;
     position: relative;
     cursor: pointer;
     flex-shrink: 0;
+    transition: all 0.2s;
 }
 .plain-checkbox input[type="checkbox"]:checked {
     background: var(--md-primary);
-    box-shadow: var(--neumo-shadow-out-small);
+    border-color: var(--md-primary);
+    box-shadow: none;
 }
 .plain-checkbox input[type="checkbox"]:checked::after {
     content: '✓';
@@ -300,15 +296,14 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
 }
-/* Fin Catégories */
 
 /* Day Card */
 .day-card {
-  background: var(--neumo-bg);
+  background: var(--md-tertiary-container);
   padding: 16px;
-  border-radius: 20px;
+  border-radius: 16px;
   margin-bottom: 8px;
-  box-shadow: var(--neumo-shadow-out-small); 
+  box-shadow: none; 
 }
 
 /* !!! CRITIQUE : Assurer le masquage !!! */
@@ -316,21 +311,21 @@ body {
   display: none !important;
 }
 
-/* FAB */
+/* FAB (Bouton d'action flottant M3) */
 .fab {
   position: fixed;
   bottom: 105px;
   right: 20px;
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: 16px; /* Carré arrondi M3 */
   background: var(--md-primary);
   color: white;
   border: none;
   display:flex;
   align-items:center;
   justify-content:center;
-  box-shadow: var(--neumo-shadow-out); 
+  box-shadow: var(--m3-shadow-2); 
   cursor:pointer;
   z-index:1000;
 }
@@ -345,7 +340,7 @@ body {
   display: block;
 }
 
-/* Bottom Tab Bar */
+/* Bottom Tab Bar (Navigation Bar M3) */
 .tab-bar {
   position: fixed;
   bottom: 0;
@@ -353,11 +348,11 @@ body {
   width: 100%;
   display: flex;
   justify-content: space-around;
-  background: var(--neumo-bg);
+  background: var(--md-surface);
   border-top: none;
   padding: 8px 0 max(8px, env(safe-area-inset-bottom));
   z-index: 1000;
-  box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.08); /* Ombre douce vers le haut */
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); /* Ombre d'élévation douce */
 }
 
 .tab-bar .tab-btn {
@@ -381,18 +376,16 @@ body {
 }
 
 .tab-bar .tab-btn:hover {
-  background: var(--neumo-bg);
-  /* Léger relief au survol */
-  box-shadow: 1px 1px 3px var(--neumo-dark), -1px -1px 3px var(--neumo-light);
+  background: rgba(0, 163, 129, 0.08); /* Effet d'ondulation M3 */
 }
 
 .tab-bar .tab-btn.active {
-  color: var(--md-primary);
-  background: var(--neumo-bg);
-  box-shadow: var(--neumo-shadow-in); 
+  color: var(--md-on-secondary-container);
+  background: var(--md-secondary-container); /* Conteneur de couleur M3 pour l'élément actif */
+  box-shadow: none;
 }
 
-/* Responsive (Centrage du TabBar sur grand écran) */
+/* Responsive */
 @media (min-width: 769px) {
   body {
     padding-bottom: 120px; 
@@ -403,15 +396,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.08); 
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); 
   }
 }
-
-.modal-buttons {
-  display: flex; /* Active la disposition flexible */
-  gap: 12px;
-  margin-top: 24px;
-  justify-content: flex-end; /* Aligne les boutons à droite */
-}
-
-/* ... (Fin du reste des styles) ... */
+/* FIN DU FICHIER STYLES.CSS */
