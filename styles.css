@@ -118,19 +118,17 @@ body {
   box-shadow: none;
 }
 
-/* Modification: Bouton d'erreur avec couleur Material You */
-.btn-error {
-  background: var(--md-error);
-  color: white;
-  box-shadow: var(--m3-shadow-1);
-}
-
 .btn-text {
   background: transparent;
   box-shadow: none;
   color: var(--md-primary);
 }
 
+.btn-error {
+  background: var(--md-error);
+  color: white;
+  box-shadow: var(--m3-shadow-1);
+}
 
 /* Cards */
 .card,
@@ -351,13 +349,12 @@ body {
 
 /* STYLES SPÉCIFIQUES CONFIG ET MENU */
 
-/* NOUVEAUTÉ : Ajout de marge pour aérer le texte */
-.group-id-description {
-  margin-top: 16px;
-  margin-bottom: 24px; /* Plus d'espace avant le bouton */
-  font-size: 14px;
+/* Amélioration de l'espacement pour l'encart Configuration du groupe */
+.info-text {
   color: var(--md-on-surface-variant);
+  font-size: 14px;
   line-height: 1.5;
+  margin-bottom: 16px; /* Marge par défaut */
 }
 
 .group-id-display {
@@ -370,6 +367,12 @@ body {
   margin-bottom: 8px;
   word-break: break-all;
   border: 1px dashed var(--md-outline); 
+}
+
+/* NOUVEAU: Ajustement de l'espacement pour le texte explicatif de l'ID de groupe */
+.group-id-description {
+  margin-top: 16px !important;
+  margin-bottom: 24px !important; /* Plus d'espace avant le bouton */
 }
 
 /* Styles Menu (Déjeuner/Dîner en colonnes) */
