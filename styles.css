@@ -339,6 +339,53 @@ body {
     transform: translate(-50%, -50%);
 }
 
+/* -------------------------------------- */
+/* STYLE SUGGESTIONS */
+/* -------------------------------------- */
+
+.suggestions-list {
+  /* Visuel d'un conteneur M3 */
+  margin-top: 8px; 
+  margin-bottom: 16px;
+  background: var(--md-surface-variant);
+  border-radius: 16px;
+  padding: 12px 0;
+}
+
+.sugg-heading {
+  /* Style du titre "Suggestions :" */
+  font-weight: 700;
+  color: var(--md-on-surface);
+  padding: 0 16px 8px 16px;
+  font-size: 14px;
+  cursor: default !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  margin-bottom: 4px;
+}
+
+.sugg-item {
+  /* Style des éléments cliquables */
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 16px; 
+  font-weight: 400;
+  color: var(--md-on-surface-variant);
+  transition: background-color 0.2s;
+}
+
+.sugg-item:hover {
+  /* Effet d'ondulation M3 */
+  background: rgba(0, 163, 129, 0.08); 
+  color: var(--md-on-surface);
+}
+
+/* Correction du feedback de duplication */
+.input-feedback {
+  margin-top: 8px; /* Séparer le feedback du bloc de suggestion */
+  padding: 0 4px;
+}
+/* -------------------------------------- */
+
 /* Day Card */
 .day-card {
   background: var(--md-tertiary-container);
@@ -447,79 +494,3 @@ body {
   display:flex;
   align-items:center;
   justify-content:center;
-  box-shadow: var(--m3-shadow-2); 
-  cursor:pointer;
-  z-index:1000;
-}
-
-/* Menu Collapse (Fonctionnalité) */
-.menu-collapse {
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height .3s ease;
-}
-
-.menu-collapse.open {
-  max-height: 2000px; 
-}
-
-/* Tab Content */
-.tab-content {
-  display: none;
-  padding-bottom: 80px; 
-}
-
-.tab-content.active {
-  display: block;
-}
-
-/* Bottom Tab Bar (Navigation Bar M3) */
-.tab-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  background: var(--md-surface);
-  border-top: none;
-  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
-  z-index: 1000;
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.tab-bar .tab-btn {
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: var(--md-on-surface-variant);
-  text-align: center;
-  cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 12px;
-  min-width: 80px;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 500;
-  box-shadow: none;
-}
-
-.tab-bar .tab-btn:hover {
-  background: rgba(0, 163, 129, 0.08);
-}
-
-.tab-bar .tab-btn.active {
-  color: var(--md-on-secondary-container);
-  background: var(--md-secondary-container); 
-  box-shadow: none;
-}
-
-/* Global Material Icons Size */
-.material-icons {
-    font-size: 24px; 
-    vertical-align: middle;
-}
