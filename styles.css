@@ -1,3 +1,6 @@
+/*
+ * Générateur de Menus - Styles Neumorphism Final
+ */
 * {
   margin: 0;
   padding: 0;
@@ -5,17 +8,19 @@
 }
 
 :root {
-  --md-primary: #6750A4; /* Couleur d'accentuation */
+  --md-primary: #6750A4;
   --md-on-primary: #FFFFFF;
+  
+  /* NOUVELLES COULEURS NEUMORPHIC POUR UN ASPECT PLUS DOUX ET MODERNE */
+  --neumo-bg: #F0F3F5; /* Fond très légèrement gris/bleu */
+  --neumo-light: #F8FBFF; /* Blanc cassé pour le highlight (moins "blanc") */
+  --neumo-dark: #C9D0D8; /* Ombre foncée adoucie */
+  
+  /* NOUVELLES VALEURS D'OMBRES POUR UN EFFET MOINS PRONONCÉ */
+  --neumo-shadow-out: 4px 4px 8px var(--neumo-dark), -4px -4px 8px var(--neumo-light);
+  --neumo-shadow-out-small: 2px 2px 4px var(--neumo-dark), -2px -2px 4px var(--neumo-light);
+  --neumo-shadow-in: inset 3px 3px 6px var(--neumo-dark), inset -3px -3px 6px var(--neumo-light);
 
-  --neumo-bg: #EAEFF2; /* Fond Neumorphic (très clair) */
-  --neumo-light: #FFFFFF;
-  --neumo-dark: #C9D6E1;
-  --neumo-shadow-out: 6px 6px 12px var(--neumo-dark), -6px -6px 12px var(--neumo-light);
-  --neumo-shadow-out-small: 3px 3px 6px var(--neumo-dark), -3px -3px 6px var(--neumo-light);
-  --neumo-shadow-in: inset 4px 4px 8px var(--neumo-dark), inset -4px -4px 8px var(--neumo-light);
-
-  /* Couleurs de l'ancienne palette (conservées mais ajustées pour le Neumorphism) */
   --md-secondary-container: #E8DEF8;
   --md-on-secondary-container: #1E192B;
   --md-on-surface: #1C1B1F;
@@ -87,13 +92,13 @@ body {
   transform: none;
 }
 
-.btn-filled {
+.btn-filled, .fab {
   background: var(--md-primary);
   color: var(--md-on-primary);
   box-shadow: var(--neumo-shadow-out);
 }
 
-.btn-filled:active {
+.btn-filled:active, .fab:active {
   background: var(--md-primary);
   box-shadow: var(--neumo-shadow-in);
 }
@@ -133,12 +138,16 @@ body {
   background: var(--neumo-bg);
   border-radius: 28px;
   padding: 24px;
-  /* Augmenter la largeur maximale pour plus d'espace */
+  margin-bottom: 16px;
+  box-shadow: var(--neumo-shadow-out); 
+}
+
+.modal-content {
+  /* Largeur optimisée pour la modale */
   max-width: 90%; 
-  width: 450px; /* Largeur fixe plus confortable */
+  width: 450px; 
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: var(--neumo-shadow-out); 
 }
 
 .card-title {
@@ -178,16 +187,12 @@ body {
   box-shadow: var(--neumo-shadow-out-small);
 }
 
-.icon-btn:hover {
-  background: var(--neumo-bg);
-}
 .icon-btn:active {
     box-shadow: var(--neumo-shadow-in);
 }
 
 /* Modal */
 .modal {
-  /* Le modal n'a pas la classe hidden, il utilise 'display: none' par défaut */
   display: none; 
   position: fixed;
   top: 0;
@@ -220,7 +225,15 @@ body {
   transition: box-shadow 0.2s;
 }
 
-/* Chips */
+/* Chips Container (pour les saisons) */
+.chip-container {
+    display: flex;
+    flex-wrap: wrap; /* Mise en ligne avec retour à la ligne si pas assez de place */
+    gap: 8px;
+    margin-bottom: 16px;
+    width: 100%; 
+}
+
 .chip {
   padding: 8px 16px;
   border-radius: 12px;
@@ -232,6 +245,8 @@ body {
   transition: all 0.2s;
   font-weight: 500;
   box-shadow: var(--neumo-shadow-out-small); 
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 
 .chip.selected {
@@ -240,44 +255,52 @@ body {
   box-shadow: var(--neumo-shadow-in); 
 }
 
-/* Checkbox */
-.checkbox {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  cursor: pointer;
-  border-radius: 12px;
-  transition: background 0.2s;
-  background: var(--neumo-bg);
-  box-shadow: var(--neumo-shadow-out-small);
+/* Catégories (Nouveaux styles pour la section sans ombre) */
+.category-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
 }
 
-.checkbox input[type="checkbox"] {
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: var(--neumo-bg);
-  border-radius: 8px;
-  box-shadow: var(--neumo-shadow-in);
-  appearance: none;
-  position: relative;
-  cursor: pointer;
-  flex-shrink: 0;
+.plain-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    cursor: pointer;
+    border-radius: 8px;
+    /* PAS D'OMBRE NEUMORPHIC pour un look épuré */
+    background: none; 
+    box-shadow: none; 
 }
-.checkbox input[type="checkbox"]:checked {
-  background: var(--md-primary);
-  box-shadow: var(--neumo-shadow-out-small);
+
+.plain-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: var(--neumo-bg);
+    border-radius: 6px;
+    box-shadow: var(--neumo-shadow-in); /* Garder l'aspect enfoncé du carré */
+    appearance: none;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
 }
-.checkbox input[type="checkbox"]:checked::after {
-  content: '✓';
-  color: white;
-  font-size: 16px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.plain-checkbox input[type="checkbox"]:checked {
+    background: var(--md-primary);
+    box-shadow: var(--neumo-shadow-out-small);
 }
+.plain-checkbox input[type="checkbox"]:checked::after {
+    content: '✓';
+    color: white;
+    font-size: 14px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+/* Fin Catégories */
 
 /* Day Card */
 .day-card {
@@ -288,17 +311,15 @@ body {
   box-shadow: var(--neumo-shadow-out-small); 
 }
 
-/* !!! CORRECTION CRITIQUE !!! */
-/* Le masquage doit être prioritaire pour cacher les blocs au chargement */
+/* !!! CRITIQUE : Assurer le masquage !!! */
 .hidden {
   display: none !important;
 }
-/* !!! FIN CORRECTION CRITIQUE !!! */
 
-/* FAB (Bouton d'ajout/génération) */
+/* FAB */
 .fab {
   position: fixed;
-  bottom: 105px; /* Au-dessus du TabBar */
+  bottom: 105px;
   right: 20px;
   width: 56px;
   height: 56px;
@@ -313,12 +334,8 @@ body {
   cursor:pointer;
   z-index:1000;
 }
-.fab:active {
-  box-shadow: var(--neumo-shadow-in);
-}
 
 /* Tab Content */
-/* S'assurer que les onglets inactifs sont bien masqués, même sans la classe .hidden sur le conteneur principal */
 .tab-content {
   display: none;
   padding-bottom: 80px; 
@@ -340,7 +357,7 @@ body {
   border-top: none;
   padding: 8px 0 max(8px, env(safe-area-inset-bottom));
   z-index: 1000;
-  box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.08); /* Ombre douce vers le haut */
 }
 
 .tab-bar .tab-btn {
@@ -365,6 +382,7 @@ body {
 
 .tab-bar .tab-btn:hover {
   background: var(--neumo-bg);
+  /* Léger relief au survol */
   box-shadow: 1px 1px 3px var(--neumo-dark), -1px -1px 3px var(--neumo-light);
 }
 
@@ -389,56 +407,4 @@ body {
   }
 }
 
-/* Nouvelles classes pour la section Catégories (sans ombre) */
-
-.category-container {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 16px;
-}
-
-.plain-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0; /* Espacement réduit pour compacité */
-  cursor: pointer;
-  border-radius: 8px;
-  /* AUCUN FOND, AUCUNE OMBRE POUR CETTE SECTION */
-  background: none; 
-  box-shadow: none; 
-}
-
-/* Style du checkbox lui-même (garder l'aspect enfoncé) */
-.plain-checkbox input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: var(--neumo-bg);
-  border-radius: 6px;
-  box-shadow: var(--neumo-shadow-in); /* Garder l'aspect enfoncé du carré */
-  appearance: none;
-  position: relative;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.plain-checkbox input[type="checkbox"]:checked {
-  background: var(--md-primary);
-  box-shadow: var(--neumo-shadow-out-small);
-}
-.plain-checkbox input[type="checkbox"]:checked::after {
-  content: '✓';
-  color: white;
-  font-size: 14px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-/* Supprimer l'ancienne classe .checkbox-container (si elle existe) ou la renommer si vous la gardez ailleurs */
-.checkbox-container {
-    /* Masquer ou désactiver si vous utilisez la nouvelle structure */
-    display: none; 
-}
+/* ... (Fin du reste des styles) ... */
