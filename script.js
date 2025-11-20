@@ -10,15 +10,19 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig); 
+firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // Variables globales
 let groupId = localStorage.getItem('groupId') || '';
 let dishes = [];
 let menus = [];
-// MISE À JOUR : Ajout de activeSeasons
-let menuConfig = { sportDays: [], activeSeasons: ['Printemps', 'Été', 'Automne', 'Hiver'], mealDuration: { lunch: 1, dinner: 1 } };
+// Configuration avec valeurs par défaut complètes
+let menuConfig = { 
+  sportDays: [], 
+  activeSeasons: ['Printemps', 'Été', 'Automne', 'Hiver'], 
+  mealDuration: { lunch: 1, dinner: 1 } 
+};
 let newDishSeasons = [];
 let editingDishId = null;
 
@@ -35,7 +39,7 @@ function generateMenu(targetWeekNumber = null) {
   const weekNumber = targetWeekNumber || (getWeekNumber(new Date()) + 1);
   
   // Filtrer les plats disponibles
-  // NOUVEAU FILTRE : (d.seasons.length === 0 || (d.seasons.includes(currentSeason) && menuConfig.activeSeasons.includes(currentSeason)))
+  // Critères : pas utilisé récemment ET (pas de saison spécifique OU (correspond à la saison actuelle ET la saison est active))
   const activeSeasonsList = menuConfig.activeSeasons || [];
   
   const availableDishes = dishes.filter(d => 
@@ -59,8 +63,7 @@ function generateMenu(targetWeekNumber = null) {
     
     // === DÉJEUNER ===
     let lunchDish = null;
-    // Correction: Assurer la bonne gestion de la répétition
-    // Répéter uniquement si la durée est > 1 ET que l'on n'est PAS au début d'un nouveau cycle de répétition
+    // Gestion de la durée : Répéter si durée > 1 ET ce n'est pas le début d'un cycle
     if (menuConfig.mealDuration.lunch > 1 && i > 0 && (i % menuConfig.mealDuration.lunch) !== 0 && schedule[i - 1].lunch) {
       lunchDish = schedule[i - 1].lunch;
     } else {
@@ -76,8 +79,7 @@ function generateMenu(targetWeekNumber = null) {
 
     // === DÎNER ===
     let dinnerDish = null;
-    // Correction: Assurer la bonne gestion de la répétition
-    // Répéter uniquement si la durée est > 1 ET que l'on n'est PAS au début d'un nouveau cycle de répétition
+    // Gestion de la durée : Répéter si durée > 1 ET ce n'est pas le début d'un cycle
     if (menuConfig.mealDuration.dinner > 1 && i > 0 && (i % menuConfig.mealDuration.dinner) !== 0 && schedule[i - 1].dinner) {
       dinnerDish = schedule[i - 1].dinner;
     } else {
@@ -141,69 +143,68 @@ function renderMenus(menusArray = menus) {
 
   if (empty) empty.classList.add('hidden');
 
-menusArray.forEach(menu => {
-  const card = document.createElement('div');
-  card.className = 'card';
+  menusArray.forEach(menu => {
+    const card = document.createElement('div');
+    card.className = 'card';
 
-  let scheduleHTML = '';
-  menu.schedule.forEach(day => {
-    // Nouvelle structure avec en-tête jour/sport et grille déjeuner/dîner
-    scheduleHTML += `
-      <div class="day-card">
-        <div class="day-header-new">
-          <div class="day-name-large">${day.day}</div>
-          ${day.isSportDay ? '<span class="sport-tag">🏋️ JOUR DE SPORT</span>' : ''}
-        </div>
-        
-        <div class="meal-grid">
-          <div class="meal-column meal-lunch">
-            <div class="meal-label">Déjeuner</div>
-            <div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>
+    let scheduleHTML = '';
+    menu.schedule.forEach(day => {
+      // Structure en colonnes (Mise en page améliorée)
+      scheduleHTML += `
+        <div class="day-card">
+          <div class="day-header-new">
+            <div class="day-name-large">${day.day}</div>
+            ${day.isSportDay ? '<span class="sport-tag">🏋️ JOUR DE SPORT</span>' : ''}
           </div>
           
-          <div class="meal-separator"></div>
-          
-          <div class="meal-column meal-dinner">
-            <div class="meal-label">Dîner</div>
-            <div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>
+          <div class="meal-grid">
+            <div class="meal-column meal-lunch">
+              <div class="meal-label">Déjeuner</div>
+              <div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>
+            </div>
+            
+            <div class="meal-separator"></div>
+            
+            <div class="meal-column meal-dinner">
+              <div class="meal-label">Dîner</div>
+              <div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>
+            </div>
           </div>
         </div>
+      `;
+    });
+
+    card.innerHTML = `
+      <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap: 12px;">
+          <span class="material-icons">calendar_today</span>
+          Semaine ${menu.weekNumber} (${menu.startDate} → ${menu.endDate})
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="icon-btn" title="Régénérer" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber})">
+            <span class="material-icons">refresh</span>
+          </button>
+          <button class="icon-btn" title="Afficher/masquer" onclick="toggleMenuContent('content-${menu.id}')">
+            <span id="icon-content-${menu.id}" class="material-icons">expand_less</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="content-${menu.id}" class="menu-collapse open">
+        ${scheduleHTML}
       </div>
     `;
+
+    container.appendChild(card);
   });
-
-  card.innerHTML = `
-    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="display:flex; align-items:center; gap: 12px;">
-        <span class="material-icons">calendar_today</span>
-        Semaine ${menu.weekNumber} (${menu.startDate} → ${menu.endDate})
-      </div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button class="icon-btn" title="Régénérer" onclick="regenerateMenu(${menu.id}, ${menu.weekNumber})">
-          <span class="material-icons">refresh</span>
-        </button>
-        <button class="icon-btn" title="Afficher/masquer" onclick="toggleMenuContent('content-${menu.id}')">
-          <span id="icon-content-${menu.id}" class="material-icons">expand_less</span>
-        </button>
-      </div>
-    </div>
-
-    <div id="content-${menu.id}" class="menu-collapse open">
-      ${scheduleHTML}
-    </div>
-  `;
-
-  container.appendChild(card);
-});
 
   console.log(`📅 ${menusArray.length} menus affichés`);
 }
 
 // ===== CONFIGURATION =====
 
-// NOUVEAU : Toggle pour les saisons dans la config
 function toggleConfigSeason(season) {
-  // Sécurité: Assurer que c'est un tableau avant d'inclure/filtrer
+  // Sécurité: Assurer que c'est un tableau
   menuConfig.activeSeasons = menuConfig.activeSeasons || []; 
   
   if (menuConfig.activeSeasons.includes(season)) {
@@ -214,9 +215,8 @@ function toggleConfigSeason(season) {
   database.ref(`groups/${groupId}/config`).set(menuConfig);
 }
 
-
 function toggleSportDay(day) {
-  // Sécurité: Assurer que c'est un tableau avant d'inclure/filtrer
+  // Sécurité: Assurer que c'est un tableau
   menuConfig.sportDays = menuConfig.sportDays || []; 
   
   if (menuConfig.sportDays.includes(day)) {
@@ -228,62 +228,48 @@ function toggleSportDay(day) {
 }
 
 function setMealDuration(meal, duration) {
-  menuConfig.mealDuration = menuConfig.mealDuration || { lunch: 1, dinner: 1 }; // Sécurité
+  menuConfig.mealDuration = menuConfig.mealDuration || { lunch: 1, dinner: 1 };
   menuConfig.mealDuration[meal] = duration;
   database.ref(`groups/${groupId}/config`).set(menuConfig);
 }
 
 function updateConfigUI() {
-  // Correction: Utiliser une liste de jours de sport sécurisée (vide si undefined)
   const sportDaysList = menuConfig.sportDays || [];
-  
-  // NOUVEAU : Liste de saisons actives sécurisée
   const activeSeasonsList = menuConfig.activeSeasons || [];
 
-  // Mettre à jour les chips de jours de sport (modal)
+  // Mettre à jour les chips de jours de sport (modal + display)
   daysOfWeek.forEach(day => {
     const chip = document.getElementById('sport_' + day);
-    if (chip) {
-      // Utilisation de la liste sécurisée
-      chip.classList.toggle('selected', sportDaysList.includes(day));
-    }
-    // Mettre à jour aussi dans l'affichage de l'onglet config
+    if (chip) chip.classList.toggle('selected', sportDaysList.includes(day));
+    
     const chipDisplay = document.getElementById('sport_display_' + day);
-    if (chipDisplay) {
-      // Utilisation de la liste sécurisée
-      chipDisplay.classList.toggle('selected', sportDaysList.includes(day));
-    }
+    if (chipDisplay) chipDisplay.classList.toggle('selected', sportDaysList.includes(day));
   });
   
-  // NOUVEAU : Mettre à jour les chips de saisons (affichage config)
+  // Mettre à jour les chips de saisons (display)
   seasons.forEach(season => {
     const chipDisplay = document.getElementById('season_display_' + season);
-    if (chipDisplay) {
-      chipDisplay.classList.toggle('selected', activeSeasonsList.includes(season));
-    }
+    if (chipDisplay) chipDisplay.classList.toggle('selected', activeSeasonsList.includes(season));
   });
 
-
-  // Mettre à jour les chips de durée des repas (modal)
-  // Sécurité pour mealDuration
+  // Mettre à jour les chips de durée des repas
   const mealDuration = menuConfig.mealDuration || { lunch: 1, dinner: 1 };
   
+  // Reset et sélection pour la modal
   ['lunch1', 'lunch2', 'dinner1', 'dinner2'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('selected');
   });
-  
   const lunch = document.getElementById('lunch' + mealDuration.lunch);
   const dinner = document.getElementById('dinner' + mealDuration.dinner);
   if (lunch) lunch.classList.add('selected');
   if (dinner) dinner.classList.add('selected');
   
-  // Mettre à jour les chips de durée des repas (affichage config)
+  // Reset et sélection pour l'affichage
   ['lunch1Display', 'lunch2Display', 'dinner1Display', 'dinner2Display'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('selected');
   });
-  
   const lunchDisplay = document.getElementById('lunch' + mealDuration.lunch + 'Display');
   const dinnerDisplay = document.getElementById('dinner' + mealDuration.dinner + 'Display');
   if (lunchDisplay) lunchDisplay.classList.add('selected');
@@ -302,18 +288,14 @@ function getWeekNumber(date) {
 
 function getWeekDates(weekNumber) {
   const year = new Date().getFullYear();
-  
-  // Trouver le premier lundi de l'année
   const jan1 = new Date(year, 0, 1);
   const dayOfWeek = jan1.getDay();
   const daysToMonday = (dayOfWeek === 0 ? 1 : 8 - dayOfWeek);
   const firstMonday = new Date(year, 0, 1 + daysToMonday);
   
-  // Calculer le lundi de la semaine demandée
   const monday = new Date(firstMonday);
   monday.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
   
-  // Calculer le dimanche
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   
@@ -340,7 +322,7 @@ function getCurrentSeason() {
 function getRecentlyUsedDishes() {
   const currentWeek = getWeekNumber(new Date());
   
-  // Correction: Ajouter une vérification pour s'assurer que 'm' et 'm.weekNumber' existent
+  // Sécurité : vérifier que 'm' et 'm.weekNumber' existent
   const recentMenus = menus.filter(m => 
     m && m.weekNumber !== undefined && 
     currentWeek - m.weekNumber <= 3 && 
@@ -467,7 +449,7 @@ function showToast(message, duration = 3000) {
   const toast = document.getElementById('customToast');
   const toastMsg = document.getElementById('toastMessage');
   if (toast && toastMsg) {
-    toastMsg.textContent = message;
+    toastMsg.innerHTML = message; // Support du HTML dans le toast
     toast.classList.remove('hidden');
     toast.classList.add('show');
     
@@ -551,7 +533,7 @@ function showMainApp() {
   }
   
   const el = document.getElementById('currentGroupIdDisplay');
-if (el) el.textContent = groupId;
+  if (el) el.textContent = groupId;
   
   // Afficher l'onglet recettes par défaut
   switchToTab('dishes');
@@ -566,7 +548,6 @@ function leaveGroup() {
 
 // ------- Copier l'ID du groupe (robuste + fallback) -------
 function copyGroupId() {
-  // Récupère l'ID soit depuis la variable globale, soit depuis l'affichage si vide
   const id = (typeof groupId !== 'undefined' && groupId) ? groupId :
              (document.getElementById('currentGroupIdDisplay')?.textContent || '').trim();
 
@@ -576,7 +557,6 @@ function copyGroupId() {
   }
 
   const flashCopyIcon = () => {
-    // Cherche le bouton par son onclick (compatible même si tu n'as pas donné d'id)
     const btn = document.querySelector('button[onclick="copyGroupId()"]') || document.getElementById('copyGroupBtn');
     if (!btn) return;
     const icon = btn.querySelector('.material-icons') || btn;
@@ -585,20 +565,17 @@ function copyGroupId() {
     setTimeout(() => { icon.textContent = old; }, 1000);
   };
 
-  // Méthode moderne (nécessite https:// ou localhost)
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(id).then(() => {
       showToast('📋 ID copié !');
       flashCopyIcon();
     }).catch((err) => {
       console.warn('Clipboard API failed, fallback:', err);
-      // fallback
       fallbackCopy(id, flashCopyIcon);
     });
     return;
   }
 
-  // Si Clipboard API non disponible → fallback
   fallbackCopy(id, flashCopyIcon);
 }
 
@@ -606,7 +583,6 @@ function fallbackCopy(text, onSuccess) {
   try {
     const ta = document.createElement('textarea');
     ta.value = text;
-    // évite le focus scroll
     ta.style.position = 'fixed';
     ta.style.top = '-9999px';
     ta.style.left = '-9999px';
@@ -621,7 +597,6 @@ function fallbackCopy(text, onSuccess) {
       showToast('📋 ID copié (fallback) !');
       if (typeof onSuccess === 'function') onSuccess();
     } else {
-      // dernier recours : affiche le prompt pour copier manuellement
       prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
     }
   } catch (e) {
@@ -674,7 +649,6 @@ function switchToTab(tabName) {
 function updateDishesTab() {
   const list = document.getElementById('dishesList');
   const empty = document.getElementById('noDishes');
-  // Vérifier la présence des cartes plutôt que la liste globale
   const hasItems = document.querySelectorAll('#dishesContainer .dish-card').length > 0;
 
   if (hasItems) {
@@ -700,7 +674,6 @@ function updateMenusTab() {
 function updateConfigDisplay() {
   // Mettre à jour l'affichage des chips de jours de sport
   const sportDaysContainer = document.getElementById('sportDaysChipsDisplay');
-  // Sécurité pour la liste de jours de sport
   const sportDaysList = menuConfig.sportDays || [];
   
   if (sportDaysContainer && sportDaysContainer.children.length === 0) {
@@ -716,7 +689,6 @@ function updateConfigDisplay() {
       sportDaysContainer.appendChild(chip);
     });
   } else if (sportDaysContainer) {
-    // Si les chips existent déjà, mettre à jour leur état 'selected'
     daysOfWeek.forEach(day => {
         const chipDisplay = document.getElementById('sport_display_' + day);
         if (chipDisplay) {
@@ -725,7 +697,7 @@ function updateConfigDisplay() {
     });
   }
 
-  // NOUVEAUTÉ: Mettre à jour l'affichage des chips de saisons
+  // Mettre à jour l'affichage des chips de saisons
   const seasonDaysContainer = document.getElementById('seasonFilterChipsDisplay');
   const activeSeasonsList = menuConfig.activeSeasons || [];
   
@@ -734,9 +706,7 @@ function updateConfigDisplay() {
       const chip = document.createElement('div');
       chip.className = 'chip';
       chip.textContent = season;
-      // Ajout de l'ID pour pouvoir le mettre à jour dans updateConfigUI
       chip.id = 'season_display_' + season; 
-      // Nouvelle fonction de toggle
       chip.onclick = () => toggleConfigSeason(season); 
       if (activeSeasonsList.includes(season)) {
         chip.classList.add('selected');
@@ -744,7 +714,6 @@ function updateConfigDisplay() {
       seasonDaysContainer.appendChild(chip);
     });
   } else if (seasonDaysContainer) {
-    // Si les chips existent déjà, mettre à jour leur état 'selected'
     seasons.forEach(season => {
         const chipDisplay = document.getElementById('season_display_' + season);
         if (chipDisplay) {
@@ -803,7 +772,6 @@ function listenToFirebase() {
       return;
     }
 
-    // Correction: Filtrer les entrées nulles et undefined
     const dishesArray = Object.entries(data)
       .filter(([, value]) => value !== null && value !== undefined)
       .map(([key, value]) => ({
@@ -811,6 +779,7 @@ function listenToFirebase() {
       id: key
     }));
 
+    // Tri alphabétique par défaut
     dishes = Object.values(
       dishesArray.reduce((acc, dish) => {
         if (!acc[dish.name] || acc[dish.name].id < dish.id) {
@@ -818,7 +787,7 @@ function listenToFirebase() {
         }
         return acc;
       }, {})
-    );
+    ).sort((a, b) => a.name.localeCompare(b.name)); // Tri ajouté ici
 
     console.log('✅ Plats:', dishes.length);
     renderDishes();
@@ -830,7 +799,6 @@ function listenToFirebase() {
 
   menusRef.on('value', snapshot => {
     const data = snapshot.val();
-    console.log('📡 Menus Firebase:', data);
     
     if (!data) {
       menus = [];
@@ -838,7 +806,6 @@ function listenToFirebase() {
       return;
     }
 
-    // Correction: Filtrer les entrées nulles et undefined
     const menusArray = Object.entries(data)
       .filter(([, value]) => value !== null && value !== undefined)
       .map(([key, value]) => ({
@@ -864,15 +831,14 @@ function listenToFirebase() {
   configRef.on('value', snapshot => {
     const data = snapshot.val();
     
-    // CORRECTION CRITIQUE: Assurer que les propriétés par défaut existent
+    // Valeurs par défaut assurées
     const defaults = { 
         sportDays: [], 
-        activeSeasons: seasons, // NOUVEAU: Par défaut, toutes les saisons sont actives
+        activeSeasons: seasons,
         mealDuration: { lunch: 1, dinner: 1 } 
     }; 
     
     if (data) {
-      // Fusionne les valeurs par défaut avec les données existantes (pour ne pas perdre activeSeasons si manquant)
       menuConfig = { ...defaults, ...data }; 
       updateConfigUI();
       console.log('✅ Config:', menuConfig);
@@ -938,11 +904,17 @@ function openAddDishModal() {
   document.getElementById('vegetarian').checked = false;
   document.getElementById('grillades').checked = false;
   
-  // Réinitialiser le feedback
+  // Réinitialiser le feedback et les suggestions
   const dishNameFeedback = document.getElementById('dishNameFeedback');
-  if (dishNameFeedback) dishNameFeedback.textContent = '';
+  if (dishNameFeedback) {
+    dishNameFeedback.textContent = '';
+    dishNameFeedback.className = 'input-feedback';
+  }
   const dishSuggestions = document.getElementById('dishSuggestions');
-  if (dishSuggestions) dishSuggestions.innerHTML = '';
+  if (dishSuggestions) {
+    dishSuggestions.innerHTML = '';
+    dishSuggestions.style.display = 'none';
+  }
   
   openModal('addDishModal');
 }
@@ -964,7 +936,10 @@ function openEditDishModal(dish) {
   const dishNameFeedback = document.getElementById('dishNameFeedback');
   if (dishNameFeedback) dishNameFeedback.textContent = '';
   const dishSuggestions = document.getElementById('dishSuggestions');
-  if (dishSuggestions) dishSuggestions.innerHTML = '';
+  if (dishSuggestions) {
+    dishSuggestions.innerHTML = '';
+    dishSuggestions.style.display = 'none';
+  }
   
   openModal('addDishModal');
 }
@@ -976,7 +951,6 @@ function saveDish() {
     return;
   }
 
-  // ✅ Vérifier qu'au moins une saison est sélectionnée
   if (newDishSeasons.length === 0) {
     showToast('❌ Veuillez sélectionner au moins une saison');
     return;
@@ -997,7 +971,6 @@ function saveDish() {
   const message = editingDishId ? '✅ Plat modifié !' : '✅ Plat ajouté !';
   showToast(message);
   
-  // ✅ Réinitialiser le formulaire
   editingDishId = null;
   newDishSeasons = [];
   
@@ -1073,47 +1046,48 @@ if (dishNameInput) {
       dishNameFeedback.textContent = '';
       dishNameFeedback.className = 'input-feedback';
       dishSuggestions.innerHTML = '';
+      dishSuggestions.style.display = 'none';
       return;
     }
 
     // Vérifier doublon exact
     const existsExact = dishes.some(d => d.name.toLowerCase() === value);
     if (existsExact) {
-      dishNameFeedback.textContent = '⚠️ Une recette avec ce nom existe déjà';
+      dishNameFeedback.innerHTML = '<span class="material-icons" style="font-size:16px; vertical-align:text-bottom;">warning</span> Une recette avec ce nom existe déjà';
       dishNameFeedback.className = 'input-feedback duplicate';
     } else {
-      dishNameFeedback.textContent = '✅ Aucun doublon exact';
+      dishNameFeedback.innerHTML = '<span class="material-icons" style="font-size:16px; vertical-align:text-bottom;">check_circle</span> Aucun doublon exact';
       dishNameFeedback.className = 'input-feedback ok';
     }
 
-    // Suggestions partielles dans le bon ordre
+    // Suggestions partielles (en excluant le doublon exact)
     const suggestions = dishes
-      .filter(d => d.name.toLowerCase().includes(value))
+      .filter(d => d.name.toLowerCase().includes(value) && d.name.toLowerCase() !== value)
       .slice(0, 5);
 
     if (suggestions.length === 0) {
       dishSuggestions.innerHTML = '';
-      return;
+      dishSuggestions.style.display = 'none';
+    } else {
+      dishSuggestions.style.display = 'block';
+      dishSuggestions.innerHTML = `
+        <div class="sugg-heading">Suggestions :</div>
+        ${suggestions.map(d => `<div class="sugg-item">${d.name}</div>`).join('')}
+      `;
     }
-
-    // MISE À JOUR : Ajout de la classe sugg-heading
-    dishSuggestions.innerHTML = `
-      <div class="sugg-heading">Suggestions :</div>
-      ${suggestions.map(d => `<div class="sugg-item">${d.name}</div>`).join('')}
-    `;
 
     // Clic sur suggestion = remplir
     document.querySelectorAll('.sugg-item').forEach(el => {
       el.addEventListener('click', () => {
         dishNameInput.value = el.textContent;
+        // Relancer l'event pour le check doublon
+        dishNameInput.dispatchEvent(new Event('input'));
         dishSuggestions.innerHTML = '';
-        dishNameFeedback.textContent = '⚠️ Une recette avec ce nom existe déjà';
-        dishNameFeedback.className = 'input-feedback duplicate';
+        dishSuggestions.style.display = 'none';
       });
     });
   });
 }
-
 
 // Exposer les fonctions globalement pour les onclick HTML
 window.showGroupTypeSelection = showGroupTypeSelection;
