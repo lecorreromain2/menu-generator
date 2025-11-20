@@ -1,5 +1,5 @@
 /*
- * Générateur de Menus - Styles Material You (Vert Teal)
+ * Générateur de Menus - Styles Material You (Vert Teal) Final
  */
 * {
   margin: 0;
@@ -8,7 +8,7 @@
 }
 
 :root {
-  /* NOUVELLE PALETTE MATERIAL YOU (Inspirée du Vert Teal #00A381) */
+  /* PALETTE MATERIAL YOU (Vert Teal #00A381) */
   --md-primary: #00A381; /* Vert Teal */
   --md-on-primary: #FFFFFF;
   --md-primary-container: #88FFD0;
@@ -54,7 +54,7 @@ body {
 .header {
   background: var(--md-surface);
   padding: 24px;
-  border-radius: 28px; /* Coins arrondis M3 */
+  border-radius: 28px;
   margin-bottom: 16px;
   box-shadow: var(--m3-shadow-1);
 }
@@ -147,6 +147,17 @@ body {
   overflow-y: auto;
 }
 
+.card-title {
+  /* CORRECTION HOMOGÉNÉITÉ: Taille du texte augmentée et espacement accru */
+  font-size: 20px; 
+  font-weight: 500;
+  color: var(--md-on-surface);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Augmentation de l'espace entre l'icône et le texte */
+}
+
 /* Dish Cards */
 .dish-card {
   background: var(--md-tertiary-container);
@@ -202,7 +213,7 @@ body {
 }
 
 .modal-buttons {
-  display: flex; /* CRITIQUE: Assure l'alignement horizontal */
+  display: flex; 
   gap: 12px;
   margin-top: 24px;
   justify-content: flex-end;
@@ -210,15 +221,15 @@ body {
 
 /* CORRECTION ALIGNEMENT BOUTONS DANS LA MODALE */
 .modal-buttons .btn {
+  flex-grow: 1; 
   width: auto; 
-  flex-basis: 0; 
-  min-width: 0; 
+  min-width: 80px; 
 }
 .modal-buttons .btn-text {
-  flex-grow: 1; /* Annuler prend 1 part */
+  flex-grow: 1; 
 }
 .modal-buttons .btn-filled {
-  flex-grow: 1.5; /* Ajouter prend 1.5 part (plus grand) */
+  flex-grow: 1.5; 
 }
 /* FIN CORRECTION ALIGNEMENT */
 
@@ -409,17 +420,9 @@ body {
   box-shadow: none;
 }
 
-/* Responsive */
-@media (min-width: 769px) {
-  body {
-    padding-bottom: 120px; 
-  }
-  
-  .tab-bar {
-    max-width: 450px; 
-    left: 50%;
-    transform: translateX(-50%);
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); 
-  }
+/* Global Material Icons Size for titles */
+.material-icons {
+    font-size: 24px; /* Augmentation de la taille des icônes dans les titres pour correspondre au nouveau font-size */
+    vertical-align: middle;
 }
+/* FIN DU FICHIER STYLES.CSS */
