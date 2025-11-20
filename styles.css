@@ -1,5 +1,5 @@
 /*
- * Générateur de Menus - Styles Material You (Vert Teal) Final Corrigé
+ * Générateur de Menus - Styles Material You (Vert Teal) Final
  */
 * {
   margin: 0;
@@ -9,16 +9,16 @@
 
 :root {
   /* PALETTE MATERIAL YOU (Vert Teal #00A381) */
-  --md-primary: #00A381; 
+  --md-primary: #00A381; /* Vert Teal */
   --md-on-primary: #FFFFFF;
   --md-primary-container: #88FFD0;
   --md-on-primary-container: #002119;
   
   --md-secondary: #5B6B67;
-  --md-secondary-container: #B7F4E5; 
+  --md-secondary-container: #B7F4E5; /* Conteneur Secondaire */
   --md-on-secondary-container: #1E2321;
   
-  --md-tertiary-container: #D6E6F8;
+  --md-tertiary-container: #D6E6F8; /* Nouveau Conteneur Tertiaire (fond des cartes jour) */
 
   --md-surface: #FFFBFE;
   --md-surface-variant: #E7E0EC;
@@ -27,9 +27,9 @@
   --md-outline: #79747E;
   --md-success: #146C2E;
   --md-success-container: #B7F4B9;
-  --md-error: #BA1A1A; 
+  --md-error: #BA1A1A; /* Rouge d'erreur Material You standard */
   --md-error-container: #FFDAD6;
-  --md-background: #F5F5F5;
+  --md-background: #F5F5F5; /* Fond clair standard */
   
   /* OMBRE M3 DOUCE */
   --m3-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
@@ -41,8 +41,7 @@ body {
   background: var(--md-background);
   min-height: 100vh;
   padding: 16px;
-  /* IMPORTANT: Espace en bas pour éviter que le contenu ne soit caché par la TabBar */
-  padding-bottom: 120px; 
+  padding-bottom: 120px;
   color: var(--md-on-surface);
 }
 
@@ -51,22 +50,49 @@ body {
   margin: 0 auto;
 }
 
-/* Header */
+/* --------------------------------------------------------- */
+/* HEADER - STYLE COLORÉ (OPTION 1) */
+/* --------------------------------------------------------- */
 .header {
-  background: var(--md-surface);
-  padding: 24px;
+  background: var(--md-primary); /* Fond Vert Teal */
+  padding: 32px 24px; 
   border-radius: 28px;
-  margin-bottom: 16px;
-  box-shadow: var(--m3-shadow-1);
+  margin-bottom: 24px;
+  box-shadow: var(--m3-shadow-2); 
+  color: var(--md-on-primary); /* Texte Blanc */
 }
 
 .title {
   font-size: 28px;
-  font-weight: 700;
-  color: var(--md-primary);
-  margin-bottom: 4px;
-  letter-spacing: 0;
+  font-weight: 800; 
+  color: var(--md-on-primary); 
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
 }
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.9); 
+  font-size: 15px;
+  font-weight: 400;
+}
+
+/* Indicateur de synchro adapté au fond vert */
+.sync-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.sync-indicator .material-icons {
+  color: #FFFFFF;
+  font-size: 20px;
+}
+/* --------------------------------------------------------- */
 
 /* Buttons */
 .btn {
@@ -126,7 +152,7 @@ body {
 }
 
 .btn-error {
-  background: #C44040;
+  background: #C44040; /* Rouge bordeaux doux */
   color: white;
   box-shadow: var(--m3-shadow-1);
 }
@@ -260,7 +286,7 @@ body {
   padding: 15px;
 }
 
-/* Chips */
+/* Chips Container */
 .chip-container {
     display: flex;
     flex-wrap: wrap;
@@ -290,7 +316,7 @@ body {
   box-shadow: none; 
 }
 
-/* Categories */
+/* Catégories */
 .category-container {
     display: flex;
     flex-direction: column;
@@ -337,15 +363,15 @@ body {
     transform: translate(-50%, -50%);
 }
 
-/* STYLE SUGGESTIONS CORRIGÉ */
+/* Suggestions */
 .suggestions-list {
   margin-top: 4px; 
   margin-bottom: 16px;
   background: var(--md-surface-variant);
   border-radius: 12px;
-  padding: 0; /* Padding géré par les items */
+  padding: 0;
   overflow: hidden;
-  display: none; /* Masqué par défaut */
+  display: none; 
 }
 
 .sugg-heading {
@@ -371,7 +397,7 @@ body {
   background: rgba(0, 163, 129, 0.08); 
 }
 
-/* Feedback Input (Message doublon) */
+/* Feedback Input */
 .input-feedback {
   margin-top: -8px; 
   margin-bottom: 16px;
@@ -384,7 +410,7 @@ body {
 .input-feedback.duplicate { color: var(--md-error); }
 .input-feedback.ok { color: var(--md-success); }
 
-/* STYLES SPÉCIFIQUES */
+/* Styles Spécifiques Config/Menu */
 .info-text {
   color: var(--md-on-surface-variant);
   font-size: 14px;
@@ -409,15 +435,7 @@ body {
   border: 1px dashed var(--md-outline); 
 }
 
-/* Day Card */
-.day-card {
-  background: var(--md-tertiary-container);
-  padding: 16px;
-  border-radius: 16px;
-  margin-bottom: 8px;
-  box-shadow: none; 
-}
-
+/* Menu en colonnes */
 .day-header-new {
     display: flex;
     justify-content: space-between;
@@ -472,6 +490,15 @@ body {
     font-weight: 400;
 }
 
+/* Day Card */
+.day-card {
+  background: var(--md-tertiary-container);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 8px;
+  box-shadow: none; 
+}
+
 /* Hidden Utility */
 .hidden {
   display: none !important;
@@ -480,7 +507,7 @@ body {
 /* FAB */
 .fab {
   position: fixed;
-  bottom: 105px; /* Ajusté pour être au-dessus du TabBar */
+  bottom: 105px;
   right: 20px;
   width: 56px;
   height: 56px;
@@ -509,7 +536,6 @@ body {
 /* Tab Content */
 .tab-content {
   display: none;
-  /* Espace pour le footer */
   padding-bottom: 80px; 
 }
 
@@ -523,12 +549,12 @@ body {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 80px; /* Hauteur standard */
+  height: 80px; 
   display: flex;
-  justify-content: space-evenly; /* Meilleure répartition */
-  background: var(--md-surface); /* Fond surface, parfois légèrement teinté */
+  justify-content: space-evenly;
+  background: var(--md-surface); 
   border-top: none;
-  padding: 0; /* Le padding est géré par les boutons */
+  padding: 0; 
   padding-bottom: env(safe-area-inset-bottom);
   z-index: 1000;
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
@@ -537,38 +563,36 @@ body {
 .tab-bar .tab-btn {
   background: none;
   border: none;
-  flex: 1; /* Chaque bouton prend une largeur égale */
+  flex: 1; 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 12px 0 16px 0; /* Espacement interne */
-  gap: 4px; /* Espace entre icône et texte */
-  /* Pas d'ombre ni de fond global sur le bouton */
+  padding: 12px 0 16px 0; 
+  gap: 4px; 
   box-shadow: none; 
   transition: all 0.2s;
-  max-width: 120px; /* Limite la largeur sur grand écran */
+  max-width: 120px; 
 }
 
 .tab-bar .tab-btn:hover {
-  background: none; /* Pas de fond au survol sur le conteneur global */
+  background: none; 
 }
 
-/* Conteneur de l'icône (La "Pilule") */
 .tab-bar .tab-btn .icon-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px; /* Largeur de la pilule active */
-  height: 32px; /* Hauteur de la pilule active */
-  border-radius: 16px; /* Forme de pilule */
+  width: 64px; 
+  height: 32px; 
+  border-radius: 16px; 
   transition: background-color 0.2s;
 }
 
 .tab-bar .tab-btn .material-icons {
   font-size: 24px;
-  color: var(--md-on-surface-variant); /* Couleur icône inactive */
+  color: var(--md-on-surface-variant); 
   transition: color 0.2s;
 }
 
@@ -576,24 +600,23 @@ body {
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
   font-weight: 500;
-  color: var(--md-on-surface-variant); /* Couleur texte inactif */
+  color: var(--md-on-surface-variant); 
   transition: color 0.2s, font-weight 0.2s;
 }
 
-/* ÉTAT ACTIF (Style M3) */
+/* ÉTAT ACTIF (Pilule) */
 .tab-bar .tab-btn.active .icon-container {
-  background-color: var(--md-secondary-container); /* Fond coloré uniquement sur l'icône */
+  background-color: var(--md-secondary-container); 
 }
 
 .tab-bar .tab-btn.active .material-icons {
-  color: var(--md-on-secondary-container); /* Couleur icône active (foncée) */
+  color: var(--md-on-secondary-container); 
 }
 
 .tab-bar .tab-btn.active .tab-label {
-  color: var(--md-on-surface); /* Texte actif plus sombre */
-  font-weight: 700; /* Texte un peu plus gras */
+  color: var(--md-on-surface); 
+  font-weight: 700; 
 }
-
 
 /* Global Material Icons Size */
 .material-icons {
