@@ -517,51 +517,83 @@ body {
   display: block;
 }
 
-/* CORRECTION TAB BAR FIXÉE EN BAS */
+/* Bottom Tab Bar (Navigation Bar M3 Standard) */
 .tab-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 80px; /* Hauteur fixe pour éviter le collapse */
+  height: 80px; /* Hauteur standard */
   display: flex;
-  justify-content: space-around;
-  background: var(--md-surface);
+  justify-content: space-evenly; /* Meilleure répartition */
+  background: var(--md-surface); /* Fond surface, parfois légèrement teinté */
   border-top: none;
-  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
-  z-index: 1000; /* Au-dessus du contenu */
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0; /* Le padding est géré par les boutons */
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 1000;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .tab-bar .tab-btn {
   background: none;
   border: none;
-  font-size: 12px;
-  color: var(--md-on-surface-variant);
-  text-align: center;
-  cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 12px;
-  min-width: 80px;
-  transition: all 0.2s;
+  flex: 1; /* Chaque bouton prend une largeur égale */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 500;
-  box-shadow: none;
+  justify-content: center;
+  cursor: pointer;
+  padding: 12px 0 16px 0; /* Espacement interne */
+  gap: 4px; /* Espace entre icône et texte */
+  /* Pas d'ombre ni de fond global sur le bouton */
+  box-shadow: none; 
+  transition: all 0.2s;
+  max-width: 120px; /* Limite la largeur sur grand écran */
 }
 
 .tab-bar .tab-btn:hover {
-  background: rgba(0, 163, 129, 0.08);
+  background: none; /* Pas de fond au survol sur le conteneur global */
 }
 
-.tab-bar .tab-btn.active {
-  color: var(--md-on-secondary-container);
-  background: var(--md-secondary-container); 
-  box-shadow: none;
+/* Conteneur de l'icône (La "Pilule") */
+.tab-bar .tab-btn .icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px; /* Largeur de la pilule active */
+  height: 32px; /* Hauteur de la pilule active */
+  border-radius: 16px; /* Forme de pilule */
+  transition: background-color 0.2s;
 }
+
+.tab-bar .tab-btn .material-icons {
+  font-size: 24px;
+  color: var(--md-on-surface-variant); /* Couleur icône inactive */
+  transition: color 0.2s;
+}
+
+.tab-bar .tab-btn .tab-label {
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-on-surface-variant); /* Couleur texte inactif */
+  transition: color 0.2s, font-weight 0.2s;
+}
+
+/* ÉTAT ACTIF (Style M3) */
+.tab-bar .tab-btn.active .icon-container {
+  background-color: var(--md-secondary-container); /* Fond coloré uniquement sur l'icône */
+}
+
+.tab-bar .tab-btn.active .material-icons {
+  color: var(--md-on-secondary-container); /* Couleur icône active (foncée) */
+}
+
+.tab-bar .tab-btn.active .tab-label {
+  color: var(--md-on-surface); /* Texte actif plus sombre */
+  font-weight: 700; /* Texte un peu plus gras */
+}
+
 
 /* Global Material Icons Size */
 .material-icons {
