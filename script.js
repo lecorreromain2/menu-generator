@@ -130,11 +130,11 @@ function renderMenus(menusArray = menus) {
   container.innerHTML = '';
 
   if (!menusArray.length) {
-    if (empty) empty.style.display = 'flex';
+    if (empty) empty.classList.remove('hidden');
     return;
   }
 
-  if (empty) empty.style.display = 'none';
+  if (empty) empty.classList.add('hidden');
 
 menusArray.forEach(menu => {
   const card = document.createElement('div');
@@ -142,19 +142,26 @@ menusArray.forEach(menu => {
 
   let scheduleHTML = '';
   menu.schedule.forEach(day => {
+    // Nouvelle structure avec en-tête jour/sport et grille déjeuner/dîner
     scheduleHTML += `
       <div class="day-card">
-        <div class="day-header">
-          <span class="day-name">${day.day}</span>
-          ${day.isSportDay ? '<span class="sport-badge">Sport</span>' : ''}
+        <div class="day-header-new">
+          <div class="day-name-large">${day.day}</div>
+          ${day.isSportDay ? '<span class="sport-tag">🏋️ JOUR DE SPORT</span>' : ''}
         </div>
-        <div class="meal">
-          <div class="meal-label">Déjeuner</div>
-          <div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>
-        </div>
-        <div class="meal">
-          <div class="meal-label">Dîner</div>
-          <div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>
+        
+        <div class="meal-grid">
+          <div class="meal-column meal-lunch">
+            <div class="meal-label">Déjeuner</div>
+            <div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>
+          </div>
+          
+          <div class="meal-separator"></div>
+          
+          <div class="meal-column meal-dinner">
+            <div class="meal-label">Dîner</div>
+            <div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>
+          </div>
         </div>
       </div>
     `;
@@ -162,7 +169,7 @@ menusArray.forEach(menu => {
 
   card.innerHTML = `
     <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
+      <div style="display:flex; align-items:center; gap: 12px;">
         <span class="material-icons">calendar_today</span>
         Semaine ${menu.weekNumber} (${menu.startDate} → ${menu.endDate})
       </div>
