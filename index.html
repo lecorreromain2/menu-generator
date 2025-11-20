@@ -111,14 +111,17 @@
       </div>
 
       <!-- Config Tab -->
-      <div id="configTab" class="tab-content">
+<div id="configTab" class="tab-content">
         <div class="card">
           <div class="card-title">
             <span class="material-icons">settings</span>
             Configuration
           </div>
           
-          <label class="label">Jours de sport</label>
+          <label class="label">Saisons des menus</label>
+          <div class="chip-container" id="seasonFilterChipsDisplay"></div> 
+          
+          <label class="label mt-16">Jours de sport</label>
           <div class="chip-container" id="sportDaysChipsDisplay"></div>
 
           <label class="label">Durée déjeuner</label>
@@ -142,7 +145,8 @@
           
           <label class="label">ID du groupe</label>
           <div class="group-id-display" id="currentGroupIdDisplay"></div>
-          <div class="info-text">
+          
+          <div class="info-text group-id-description">
             Partagez cet ID avec d'autres personnes pour qu'ils rejoignent votre groupe et synchronisent leurs données.
           </div>
 
