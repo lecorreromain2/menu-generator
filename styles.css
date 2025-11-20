@@ -4,7 +4,7 @@
   box-sizing: border-box;
 }
 
-:root {
+:root { 
   /* NOUVELLE PALETTE MATERIAL YOU (Inspirée du Vert Teal #00A381) */
   --md-primary: #00A381; /* Vert Teal */
   --md-on-primary: #FFFFFF;
