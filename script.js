@@ -297,13 +297,22 @@ function renderDishes() {
   if (countSpan) countSpan.textContent = filteredDishes.length.toString();
 
   filteredDishes.forEach(dish => {
+    // Gestion de l'affichage des tags Repas
     const isLunch = !dish.mealType || dish.mealType.includes('lunch');
     const isDinner = !dish.mealType || dish.mealType.includes('dinner');
+    
     let mealTags = '';
-    if (isLunch && isDinner) mealTags = '<span class="tag tag-meal">Midi/Soir</span>';
-    else if (isLunch) mealTags = '<span class="tag tag-meal">Midi</span>';
-    else if (isDinner) mealTags = '<span class="tag tag-meal">Soir</span>';
-
+    
+    if (isLunch && isDinner) {
+      // Si convient aux deux
+      mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
+    } else if (isLunch) {
+      // Uniquement Midi
+      mealTags = '<span class="tag tag-lunch">☀️ Midi</span>';
+    } else if (isDinner) {
+      // Uniquement Soir
+      mealTags = '<span class="tag tag-dinner">🌙 Soir</span>';
+    }
     const iconName = getDishIcon(dish.name);
 
     const cardWrapper = document.createElement('div');
