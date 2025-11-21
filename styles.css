@@ -348,36 +348,42 @@ details[open] summary .arrow { transform: rotate(180deg); }
 /* --- STYLES SPÉCIFIQUES : CONFIGURATION DU GROUPE --- */
 
 .group-setup-card {
-  padding: 40px 24px; /* Plus d'espace interne */
+  padding: 40px 24px;
   text-align: center;
   margin-top: 20px;
   border-radius: 28px;
-  /* Optionnel : Un fond légèrement teinté pour se démarquer */
-  background: linear-gradient(to bottom, var(--md-surface), var(--md-tertiary-container));
+  /* CORRECTION : Fond uni (surface) pour supprimer le dégradé */
+  background: var(--md-surface); 
+  box-shadow: var(--m3-shadow-1);
 }
 
 .card-title.justify-center {
   justify-content: center;
-  font-size: 24px; /* Titre plus grand */
+  font-size: 24px; 
   margin-bottom: 8px;
   color: var(--md-primary);
 }
 
 .welcome-text {
   font-size: 16px;
-  margin-bottom: 32px !important; /* Grand espace avant les boutons */
+  margin-bottom: 32px !important; 
   color: var(--md-on-surface-variant);
 }
 
+/* Conteneur des boutons principaux */
 .setup-buttons {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Espace régulier entre les boutons */
+  gap: 16px; 
   width: 100%;
 }
 
+/* CORRECTION : Alignement horizontal pour le formulaire Rejoindre */
 .setup-buttons.row {
-  flex-direction: row; /* Pour les boutons Retour/Rejoindre */
+  flex-direction: row; 
+  align-items: center;
+  justify-content: space-between; /* Espacement égal */
+  margin-top: 16px;
 }
 
 /* Boutons larges pour l'accueil */
