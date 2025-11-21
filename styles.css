@@ -243,13 +243,20 @@ body {
 /* TAGS */
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
-.tag-season { background: #E0E3E7; color: #454950; }
+
+/* Supprimez l'ancien .tag-season générique ou gardez-le en fallback */
+.tag-season { background: #E0E3E7; color: #454950; } 
+
+/* Nouvelles couleurs par saison */
+.tag-spring { background: #F3E5F5; color: #5D1875; } /* Violet Printemps */
+.tag-summer { background: #FFF8E1; color: #7D5600; } /* Jaune Été */
+.tag-autumn { background: #FFECB3; color: #6D4C41; } /* Orange Automne */
+.tag-winter { background: #E1F5FE; color: #01579B; } /* Bleu Hiver */
+
 .tag-sport { background: #FFDAD6; color: #410002; }
 .tag-veg { background: #C4EED0; color: #07210F; }
 .tag-grill { background: #FFDCC2; color: #2E1500; }
 .tag-meal { background: #D3E3FD; color: #041E49; }
-.swipe-hint { color: var(--md-outline); opacity: 0.5; font-size: 12px; }
-
 /* --- FILTRES --- */
 .filters-container { display: flex; gap: 8px; overflow-x: auto; padding: 4px 4px 16px 4px; margin-bottom: 8px; scrollbar-width: none; }
 .filters-container::-webkit-scrollbar { display: none; }
