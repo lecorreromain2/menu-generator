@@ -10,8 +10,13 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+// On enveloppe dans un try-catch pour éviter de bloquer l'app si Firebase échoue (offline)
+try {
+  firebase.initializeApp(firebaseConfig);
+} catch (e) {
+  console.error("Erreur initialisation Firebase:", e);
+}
+const database = typeof firebase !== 'undefined' ? firebase.database() : null;
 
 // Variables globales
 let groupId = localStorage.getItem('groupId') || '';
@@ -31,6 +36,7 @@ const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi',
 
 // ===== HELPER : Icône Automatique =====
 function getDishIcon(name) {
+  if (!name) return 'restaurant_menu';
   const n = name.toLowerCase();
   if (n.includes('burger') || n.includes('sandwich')) return 'lunch_dining';
   if (n.includes('pizza')) return 'local_pizza';
@@ -46,6 +52,44 @@ function getDishIcon(name) {
   return 'restaurant_menu'; 
 }
 
+// ===== PWA (Définies en premier pour éviter les erreurs de référence) =====
+let deferredPrompt;
+
+function setupPWA() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+      console.log('✅ Service Worker enregistré');
+    }).catch(err => {
+      console.error('❌ Erreur SW:', err);
+    });
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const prompt = document.getElementById('installPrompt');
+    if (prompt) prompt.classList.remove('hidden');
+  });
+
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    console.log('✅ App installée');
+  }
+}
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('✅ Installation acceptée');
+        const prompt = document.getElementById('installPrompt');
+        if (prompt) prompt.classList.add('hidden');
+      }
+      deferredPrompt = null;
+    });
+  }
+}
+
 // ===== MENU =====
 
 function generateMenu(targetWeekNumber = null) {
@@ -55,7 +99,6 @@ function generateMenu(targetWeekNumber = null) {
   
   const activeSeasonsList = menuConfig.activeSeasons || [];
   
-  // Filtrer les plats disponibles
   const availableDishes = dishes.filter(d => 
     !recentlyUsed.has(d.id) && 
     (d.seasons.length === 0 || 
@@ -119,14 +162,14 @@ function generateMenu(targetWeekNumber = null) {
   };
 
   updateSyncIcon(true);
-  database.ref(`groups/${groupId}/menus/${newMenu.id}`).set(newMenu);
+  if (database) database.ref(`groups/${groupId}/menus/${newMenu.id}`).set(newMenu);
   showToast('✅ Menu généré !');
   switchToTab('menus');
 }
 
 function regenerateMenu(menuId, weekNumber) {
   if (confirm('Voulez-vous régénérer ce menu ? L\'ancien sera remplacé.')) {
-    database.ref(`groups/${groupId}/menus/${menuId}`).remove();
+    if (database) database.ref(`groups/${groupId}/menus/${menuId}`).remove();
     generateMenu(weekNumber);
   }
 }
@@ -203,7 +246,7 @@ function toggleConfigSeason(season) {
   } else {
     menuConfig.activeSeasons.push(season);
   }
-  database.ref(`groups/${groupId}/config`).set(menuConfig);
+  if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 }
 
 function toggleSportDay(day) {
@@ -213,13 +256,13 @@ function toggleSportDay(day) {
   } else {
     menuConfig.sportDays.push(day);
   }
-  database.ref(`groups/${groupId}/config`).set(menuConfig);
+  if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 }
 
 function setMealDuration(meal, duration) {
   menuConfig.mealDuration = menuConfig.mealDuration || { lunch: 1, dinner: 1 };
   menuConfig.mealDuration[meal] = duration;
-  database.ref(`groups/${groupId}/config`).set(menuConfig);
+  if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 }
 
 function updateConfigUI() {
@@ -297,27 +340,34 @@ function renderDishes() {
   if (countSpan) countSpan.textContent = filteredDishes.length.toString();
 
   filteredDishes.forEach(dish => {
-    // Gestion de l'affichage des tags Repas
     const isLunch = !dish.mealType || dish.mealType.includes('lunch');
     const isDinner = !dish.mealType || dish.mealType.includes('dinner');
-    
     let mealTags = '';
     
+    // Nouveaux tags repas colorés
     if (isLunch && isDinner) {
-      // Si convient aux deux
       mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
     } else if (isLunch) {
-      // Uniquement Midi
       mealTags = '<span class="tag tag-lunch">☀️ Midi</span>';
     } else if (isDinner) {
-      // Uniquement Soir
       mealTags = '<span class="tag tag-dinner">🌙 Soir</span>';
     }
+
     const iconName = getDishIcon(dish.name);
 
     const cardWrapper = document.createElement('div');
     cardWrapper.className = 'dish-card-wrapper';
     
+    // Gestion des couleurs de saison
+    const seasonsHtml = dish.seasons.map(s => {
+      let seasonClass = 'tag-season';
+      if (s === 'Printemps') seasonClass = 'tag-spring';
+      if (s === 'Été') seasonClass = 'tag-summer';
+      if (s === 'Automne') seasonClass = 'tag-autumn';
+      if (s === 'Hiver') seasonClass = 'tag-winter';
+      return `<span class="tag ${seasonClass}">${s}</span>`;
+    }).join('');
+
     cardWrapper.innerHTML = `
       <div class="dish-card-content">
         <div class="dish-icon-area">
@@ -327,14 +377,7 @@ function renderDishes() {
           <h3>${dish.name}</h3>
           <div class="tags">
               ${mealTags}
-              ${dish.seasons.map(s => {
-  let seasonClass = 'tag-season';
-  if (s === 'Printemps') seasonClass = 'tag-spring';
-  if (s === 'Été') seasonClass = 'tag-summer';
-  if (s === 'Automne') seasonClass = 'tag-autumn';
-  if (s === 'Hiver') seasonClass = 'tag-winter';
-  return `<span class="tag ${seasonClass}">${s}</span>`;
-}).join('')}
+              ${seasonsHtml}
               ${dish.sportDay ? '<span class="tag tag-sport">Sport</span>' : ''}
               ${dish.vegetarian ? '<span class="tag tag-veg">Végé</span>' : ''}
               ${dish.grillades ? '<span class="tag tag-grill">Grill</span>' : ''}
@@ -448,7 +491,7 @@ function saveDish() {
   };
 
   updateSyncIcon(true);
-  database.ref(`groups/${groupId}/dishes/${dish.id}`).set(dish);
+  if (database) database.ref(`groups/${groupId}/dishes/${dish.id}`).set(dish);
   
   const message = editingDishId ? '✅ Plat modifié !' : '✅ Plat ajouté !';
   showToast(message);
@@ -461,12 +504,136 @@ function saveDish() {
 function deleteDish(id) {
   if (confirm('Voulez-vous vraiment supprimer ce plat ?')) {
     updateSyncIcon(true);
-    database.ref(`groups/${groupId}/dishes/${id}`).remove();
+    if (database) database.ref(`groups/${groupId}/dishes/${id}`).remove();
     showToast('✅ Plat supprimé');
   }
 }
 
-// ===== GROUPE & UTILITAIRES SYSTEME =====
+const dishNameInput = document.getElementById('dishName');
+const dishNameFeedback = document.getElementById('dishNameFeedback');
+const dishSuggestions = document.getElementById('dishSuggestions');
+
+if (dishNameInput) {
+  dishNameInput.addEventListener('input', () => {
+    const value = dishNameInput.value.trim().toLowerCase();
+    
+    if (!value) {
+      dishNameFeedback.textContent = '';
+      dishNameFeedback.className = 'input-feedback';
+      dishSuggestions.innerHTML = '';
+      dishSuggestions.style.display = 'none';
+      return;
+    }
+
+    const existsExact = dishes.some(d => d.name.toLowerCase() === value);
+    if (existsExact) {
+      dishNameFeedback.innerHTML = '<span class="material-icons" style="font-size:16px; vertical-align:text-bottom;">warning</span> Une recette avec ce nom existe déjà';
+      dishNameFeedback.className = 'input-feedback duplicate';
+    } else {
+      dishNameFeedback.innerHTML = '<span class="material-icons" style="font-size:16px; vertical-align:text-bottom;">check_circle</span> Aucun doublon exact';
+      dishNameFeedback.className = 'input-feedback ok';
+    }
+
+    const suggestions = dishes
+      .filter(d => d.name.toLowerCase().includes(value) && d.name.toLowerCase() !== value)
+      .slice(0, 5);
+
+    if (suggestions.length === 0) {
+      dishSuggestions.innerHTML = '';
+      dishSuggestions.style.display = 'none';
+    } else {
+      dishSuggestions.style.display = 'block';
+      dishSuggestions.innerHTML = `
+        <div class="sugg-heading">Suggestions :</div>
+        ${suggestions.map(d => `<div class="sugg-item">${d.name}</div>`).join('')}
+      `;
+    }
+
+    document.querySelectorAll('.sugg-item').forEach(el => {
+      el.addEventListener('click', () => {
+        dishNameInput.value = el.textContent;
+        dishNameInput.dispatchEvent(new Event('input'));
+        dishSuggestions.innerHTML = '';
+        dishSuggestions.style.display = 'none';
+      });
+    });
+  });
+}
+
+// UTILITAIRES & FIREBASE
+function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function getWeekDates(weekNumber) {
+  const year = new Date().getFullYear();
+  const jan1 = new Date(year, 0, 1);
+  const dayOfWeek = jan1.getDay();
+  const daysToMonday = (dayOfWeek === 0 ? 1 : 8 - dayOfWeek);
+  const firstMonday = new Date(year, 0, 1 + daysToMonday);
+  const monday = new Date(firstMonday);
+  monday.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const formatDate = (date) => {
+    const d = date.getDate().toString().padStart(2, '0');
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    return `${d}/${m}`;
+  };
+  return { monday: formatDate(monday), sunday: formatDate(sunday) };
+}
+
+function getCurrentSeason() {
+  const month = new Date().getMonth();
+  if (month >= 2 && month <= 4) return 'Printemps';
+  if (month >= 5 && month <= 7) return 'Été';
+  if (month >= 8 && month <= 10) return 'Automne';
+  return 'Hiver';
+}
+
+function getRecentlyUsedDishes() {
+  const currentWeek = getWeekNumber(new Date());
+  const recentMenus = menus.filter(m => 
+    m && m.weekNumber !== undefined && 
+    currentWeek - m.weekNumber <= 3 && 
+    currentWeek - m.weekNumber >= 0
+  );
+  const usedDishIds = new Set();
+  recentMenus.forEach(menu => {
+    menu.schedule.forEach(day => {
+      if (day.lunch) usedDishIds.add(day.lunch.id);
+      if (day.dinner) usedDishIds.add(day.dinner.id);
+    });
+  });
+  return usedDishIds;
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.add('active');
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('active');
+}
+
+function toggleMenuContent(id) {
+  const content = document.getElementById(id);
+  const icon = document.getElementById('icon-' + id);
+  const isOpen = content.classList.contains('open');
+  if (isOpen) {
+    content.classList.remove('open');
+    icon.textContent = 'expand_more';
+  } else {
+    content.classList.add('open');
+    icon.textContent = 'expand_less';
+  }
+}
 
 function showGroupTypeSelection() {
   document.getElementById('groupTypeSelection').classList.remove('hidden');
@@ -537,47 +704,11 @@ function copyGroupId() {
     return;
   }
 
-  const flashCopyIcon = () => {
-    const btn = document.querySelector('button[onclick="copyGroupId()"]') || document.getElementById('copyGroupBtn');
-    if (!btn) return;
-    const icon = btn.querySelector('.material-icons') || btn;
-    const old = icon.textContent;
-    icon.textContent = 'check';
-    setTimeout(() => { icon.textContent = old; }, 1000);
-  };
-
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(id).then(() => {
       showToast('📋 ID copié !');
-      flashCopyIcon();
-    }).catch((err) => {
-      fallbackCopy(id, flashCopyIcon);
     });
     return;
-  }
-  fallbackCopy(id, flashCopyIcon);
-}
-
-function fallbackCopy(text, onSuccess) {
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.top = '-9999px';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-    if (ok) {
-      showToast('📋 ID copié (fallback) !');
-      if (typeof onSuccess === 'function') onSuccess();
-    } else {
-      prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
-    }
-  } catch (e) {
-    prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
   }
 }
 
@@ -792,131 +923,6 @@ function updateSyncIcon(syncing, error = false) {
     indicator.classList.remove('hidden', 'error');
     icon.textContent = 'check_circle';
   }
-}
-
-function getWeekNumber(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-}
-
-function getWeekDates(weekNumber) {
-  const year = new Date().getFullYear();
-  const jan1 = new Date(year, 0, 1);
-  const dayOfWeek = jan1.getDay();
-  const daysToMonday = (dayOfWeek === 0 ? 1 : 8 - dayOfWeek);
-  const firstMonday = new Date(year, 0, 1 + daysToMonday);
-  const monday = new Date(firstMonday);
-  monday.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  const formatDate = (date) => {
-    const d = date.getDate().toString().padStart(2, '0');
-    const m = (date.getMonth() + 1).toString().padStart(2, '0');
-    return `${d}/${m}`;
-  };
-  return { monday: formatDate(monday), sunday: formatDate(sunday) };
-}
-
-function getCurrentSeason() {
-  const month = new Date().getMonth();
-  if (month >= 2 && month <= 4) return 'Printemps';
-  if (month >= 5 && month <= 7) return 'Été';
-  if (month >= 8 && month <= 10) return 'Automne';
-  return 'Hiver';
-}
-
-function getRecentlyUsedDishes() {
-  const currentWeek = getWeekNumber(new Date());
-  const recentMenus = menus.filter(m => 
-    m && m.weekNumber !== undefined && 
-    currentWeek - m.weekNumber <= 3 && 
-    currentWeek - m.weekNumber >= 0
-  );
-  const usedDishIds = new Set();
-  recentMenus.forEach(menu => {
-    menu.schedule.forEach(day => {
-      if (day.lunch) usedDishIds.add(day.lunch.id);
-      if (day.dinner) usedDishIds.add(day.dinner.id);
-    });
-  });
-  return usedDishIds;
-}
-
-function openModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.classList.add('active');
-}
-
-function closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.classList.remove('active');
-}
-
-function toggleMenuContent(id) {
-  const content = document.getElementById(id);
-  const icon = document.getElementById('icon-' + id);
-  const isOpen = content.classList.contains('open');
-  if (isOpen) {
-    content.classList.remove('open');
-    icon.textContent = 'expand_more';
-  } else {
-    content.classList.add('open');
-    icon.textContent = 'expand_less';
-  }
-}
-
-// --- EVENTS LISTENERS ---
-const dishNameInputEl = document.getElementById('dishName');
-if (dishNameInputEl) {
-  dishNameInputEl.addEventListener('input', () => {
-    const value = dishNameInputEl.value.trim().toLowerCase();
-    const dishNameFeedback = document.getElementById('dishNameFeedback');
-    const dishSuggestions = document.getElementById('dishSuggestions');
-    
-    if (!value) {
-      dishNameFeedback.textContent = '';
-      dishNameFeedback.className = 'input-feedback';
-      dishSuggestions.innerHTML = '';
-      dishSuggestions.style.display = 'none';
-      return;
-    }
-
-    const existsExact = dishes.some(d => d.name.toLowerCase() === value);
-    if (existsExact) {
-      dishNameFeedback.innerHTML = '<span class="material-icons" style="font-size:16px; vertical-align:text-bottom;">warning</span> Une recette avec ce nom existe déjà';
-      dishNameFeedback.className = 'input-feedback duplicate';
-    } else {
-      dishNameFeedback.innerHTML = '<span class="material-icons" style="font-size:16px; vertical-align:text-bottom;">check_circle</span> Aucun doublon exact';
-      dishNameFeedback.className = 'input-feedback ok';
-    }
-
-    const suggestions = dishes
-      .filter(d => d.name.toLowerCase().includes(value) && d.name.toLowerCase() !== value)
-      .slice(0, 5);
-
-    if (suggestions.length === 0) {
-      dishSuggestions.innerHTML = '';
-      dishSuggestions.style.display = 'none';
-    } else {
-      dishSuggestions.style.display = 'block';
-      dishSuggestions.innerHTML = `
-        <div class="sugg-heading">Suggestions :</div>
-        ${suggestions.map(d => `<div class="sugg-item">${d.name}</div>`).join('')}
-      `;
-    }
-
-    document.querySelectorAll('.sugg-item').forEach(el => {
-      el.addEventListener('click', () => {
-        dishNameInputEl.value = el.textContent;
-        dishNameInputEl.dispatchEvent(new Event('input'));
-        dishSuggestions.innerHTML = '';
-        dishSuggestions.style.display = 'none';
-      });
-    });
-  });
 }
 
 // ===== EXPORTS =====
