@@ -10,7 +10,6 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-// On enveloppe dans un try-catch pour éviter de bloquer l'app si Firebase échoue (offline)
 try {
   firebase.initializeApp(firebaseConfig);
 } catch (e) {
@@ -52,7 +51,7 @@ function getDishIcon(name) {
   return 'restaurant_menu'; 
 }
 
-// ===== PWA (Définies en premier pour éviter les erreurs de référence) =====
+// ===== PWA =====
 let deferredPrompt;
 
 function setupPWA() {
@@ -344,7 +343,6 @@ function renderDishes() {
     const isDinner = !dish.mealType || dish.mealType.includes('dinner');
     let mealTags = '';
     
-    // Nouveaux tags repas colorés
     if (isLunch && isDinner) {
       mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
     } else if (isLunch) {
@@ -358,7 +356,6 @@ function renderDishes() {
     const cardWrapper = document.createElement('div');
     cardWrapper.className = 'dish-card-wrapper';
     
-    // Gestion des couleurs de saison
     const seasonsHtml = dish.seasons.map(s => {
       let seasonClass = 'tag-season';
       if (s === 'Printemps') seasonClass = 'tag-spring';
@@ -707,8 +704,33 @@ function copyGroupId() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(id).then(() => {
       showToast('📋 ID copié !');
+    }).catch((err) => {
+      fallbackCopy(id);
     });
     return;
+  }
+  fallbackCopy(id);
+}
+
+function fallbackCopy(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (ok) {
+      showToast('📋 ID copié (fallback) !');
+    } else {
+      prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
+    }
+  } catch (e) {
+    prompt('Copiez manuellement l\'ID (Ctrl/Cmd+C puis Entrée) :', text);
   }
 }
 
@@ -891,6 +913,22 @@ function initSportDaysChips() {
     chip.id = 'sport_' + day;
     chip.onclick = () => toggleSportDay(day);
     container.appendChild(chip);
+  });
+}
+
+// ===== TOOLTIP (RESTORED) =====
+function setupTooltip() {
+  const syncIcon = document.getElementById('syncIcon');
+  if (!syncIcon) return;
+
+  let touchTimer;
+  syncIcon.addEventListener('touchstart', (e) => {
+    touchTimer = setTimeout(() => {
+      showToast(`Groupe : ${groupId}`, 2000);
+    }, 500);
+  });
+  syncIcon.addEventListener('touchend', () => {
+    clearTimeout(touchTimer);
   });
 }
 
