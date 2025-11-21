@@ -329,3 +329,30 @@ details[open] summary .arrow { transform: rotate(180deg); }
 /* Custom Toast */
 .custom-toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(200px); background: var(--md-on-surface); color: var(--md-surface); padding: 16px 24px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); z-index: 2000; max-width: 80%; font-weight: 500; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .custom-toast.show { transform: translateX(-50%) translateY(0); }
+
+/* --- CORRECTIF FORCE POUR LES BOUTONS DU MENU --- */
+.card-title .icon-btn {
+  background: transparent !important; /* Force le fond transparent */
+  border: 1px solid var(--md-outline) !important; /* Bordure fine élégante */
+  color: var(--md-on-surface-variant) !important;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px; /* Carré arrondi (style M3) */
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none !important;
+  margin-left: 4px;
+}
+
+.card-title .icon-btn:hover {
+  background-color: var(--md-secondary-container) !important;
+  color: var(--md-on-secondary-container) !important;
+  border-color: transparent !important;
+}
+
+.card-title .icon-btn .material-icons {
+  font-size: 20px; /* Ajuste la taille de l'icône */
+}
