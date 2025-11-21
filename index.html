@@ -41,30 +41,35 @@
       </div>
     </div>
 
-    <div id="groupSetup" class="card">
-      <div class="card-title">
-        <span class="material-icons">group</span>
+   <div id="groupSetup" class="card group-setup-card">
+      <div class="card-title justify-center">
+        <span class="material-icons" style="font-size: 28px;">group_add</span>
         Configuration du groupe
       </div>
       
       <div id="groupTypeSelection">
-        <div class="info-text">Que souhaitez-vous faire ?</div>
-        <button class="btn btn-filled" onclick="showCreateGroup()" style="width: 100%; margin-bottom: 12px;">
-          <span class="material-icons">add_circle</span>
-          Créer un nouveau groupe
-        </button>
-        <button class="btn btn-outlined" onclick="showJoinGroup()" style="width: 100%;">
-          <span class="material-icons">login</span>
-          Rejoindre un groupe existant
-        </button>
+        <div class="info-text welcome-text">
+          Bienvenue !<br>Que souhaitez-vous faire ?
+        </div>
+        
+        <div class="setup-buttons">
+          <button class="btn btn-filled btn-large" onclick="showCreateGroup()">
+            <span class="material-icons">add_circle</span>
+            Créer un nouveau groupe
+          </button>
+          <button class="btn btn-outlined btn-large" onclick="showJoinGroup()">
+            <span class="material-icons">login</span>
+            Rejoindre un groupe existant
+          </button>
+        </div>
       </div>
 
       <div id="joinGroupForm" class="hidden">
-        <div class="info-text">Entrez l'ID du groupe que vous avez reçu</div>
-        <input type="text" id="groupIdInput" class="input" placeholder="Collez l'ID du groupe ici">
-        <div style="display: flex; gap: 12px;">
-          <button class="btn btn-text" onclick="showGroupTypeSelection()" style="flex: 1;">Retour</button>
-          <button class="btn btn-filled" onclick="joinGroup()" style="flex: 1;">Rejoindre</button>
+        <div class="info-text text-center">Entrez l'ID du groupe que vous avez reçu</div>
+        <input type="text" id="groupIdInput" class="input text-center" placeholder="Collez l'ID du groupe ici">
+        <div class="setup-buttons row">
+          <button class="btn btn-text" onclick="showGroupTypeSelection()">Retour</button>
+          <button class="btn btn-filled" onclick="joinGroup()">Rejoindre</button>
         </div>
       </div>
     </div>
