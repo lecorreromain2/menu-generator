@@ -65,11 +65,17 @@
       </div>
 
       <div id="joinGroupForm" class="hidden">
-        <div class="info-text text-center">Entrez l'ID du groupe que vous avez reçu</div>
-        <input type="text" id="groupIdInput" class="input text-center" placeholder="Collez l'ID du groupe ici">
+        <div class="info-text text-center" style="margin-bottom: 24px;">
+          Entrez l'ID du groupe que vous avez reçu
+        </div>
+        
+        <input type="text" id="groupIdInput" class="input text-center" placeholder="Collez l'ID ici (ex: group_...)" style="margin-bottom: 24px;">
+        
         <div class="setup-buttons row">
           <button class="btn btn-text" onclick="showGroupTypeSelection()">Retour</button>
-          <button class="btn btn-filled" onclick="joinGroup()">Rejoindre</button>
+          <button class="btn btn-filled" onclick="joinGroup()" style="padding-left: 32px; padding-right: 32px;">
+            Rejoindre
+          </button>
         </div>
       </div>
     </div>
