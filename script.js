@@ -318,7 +318,14 @@ function renderDishes() {
           <h3>${dish.name}</h3>
           <div class="tags">
               ${mealTags}
-              ${dish.seasons.map(s => `<span class="tag tag-season">${s}</span>`).join('')}
+              ${dish.seasons.map(s => {
+  let seasonClass = 'tag-season';
+  if (s === 'Printemps') seasonClass = 'tag-spring';
+  if (s === 'Été') seasonClass = 'tag-summer';
+  if (s === 'Automne') seasonClass = 'tag-autumn';
+  if (s === 'Hiver') seasonClass = 'tag-winter';
+  return `<span class="tag ${seasonClass}">${s}</span>`;
+}).join('')}
               ${dish.sportDay ? '<span class="tag tag-sport">Sport</span>' : ''}
               ${dish.vegetarian ? '<span class="tag tag-veg">Végé</span>' : ''}
               ${dish.grillades ? '<span class="tag tag-grill">Grill</span>' : ''}
