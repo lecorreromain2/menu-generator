@@ -18,7 +18,6 @@
 </head>
 <body>
   <div class="container">
-    <!-- Install Prompt -->
     <div id="installPrompt" class="install-prompt hidden">
       <div class="install-text">
         <div class="install-title">📱 Installer l'application</div>
@@ -27,7 +26,6 @@
       <button class="btn btn-filled-tonal" onclick="installApp()">Installer</button>
     </div>
 
-    <!-- Header -->
     <div class="header">
       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
@@ -43,7 +41,6 @@
       </div>
     </div>
 
-    <!-- Group Setup -->
     <div id="groupSetup" class="card">
       <div class="card-title">
         <span class="material-icons">group</span>
@@ -72,30 +69,36 @@
       </div>
     </div>
 
-    <!-- Main App -->
     <div id="mainApp" class="hidden">
-      <!-- Les anciens onglets sont maintenant dans la tabbar en bas -->
-
-      <!-- Dishes Tab -->
+      
       <div id="dishesTab" class="tab-content active">
-        <div id="dishesList" class="card hidden">
-          <div class="card-title">
-            <span class="material-icons">restaurant_menu</span>
+        
+        <div class="filters-container">
+          <div class="filter-chip" onclick="toggleFilter('lunch')" id="filter_lunch">☀️ Déjeuner</div>
+          <div class="filter-chip" onclick="toggleFilter('dinner')" id="filter_dinner">🌙 Dîner</div>
+          <div class="filter-chip" onclick="toggleFilter('sport')" id="filter_sport">🏋️ Sport</div>
+          <div class="filter-chip" onclick="toggleFilter('vege')" id="filter_vege">🥦 Végé</div>
+          <div class="filter-chip" onclick="toggleFilter('summer')" id="filter_summer">☀️ Été</div>
+          <div class="filter-chip" onclick="toggleFilter('winter')" id="filter_winter">❄️ Hiver</div>
+        </div>
+
+        <div id="dishesList" class="hidden">
+          <div class="list-header-text">
             Mes recettes (<span id="dishCount">0</span>)
           </div>
           <div id="dishesContainer"></div>
         </div>
+
         <div id="noDishes" class="empty-state">
           <span class="material-icons" style="font-size: 48px; color: var(--md-outline);">restaurant</span>
           <p>Aucune recette pour le moment</p>
-          <p style="font-size: 12px; color: var(--md-on-surface-variant);">Commencez par ajouter vos recettes préférées</p>
+          <p style="font-size: 12px; color: var(--md-on-surface-variant);">Ajoutez des recettes ou modifiez les filtres.</p>
         </div>
         <button id="fabAdd" class="fab" onclick="openAddDishModal()">
           <span class="material-icons">add</span>
         </button>
       </div>
 
-      <!-- Menus Tab -->
       <div id="menusTab" class="tab-content">
         <div id="menusListContainer">
           <div id="menusList"></div>
@@ -110,73 +113,88 @@
         </button>
       </div>
 
-      <!-- Config Tab -->
-<div id="configTab" class="tab-content">
-        <div class="card">
-          <div class="card-title">
-            <span class="material-icons">settings</span>
-            Configuration
-          </div>
-          
-          <label class="label">Saisons des menus</label>
-          <div class="chip-container" id="seasonFilterChipsDisplay"></div> 
-          
-          <label class="label mt-16">Jours de sport</label>
-          <div class="chip-container" id="sportDaysChipsDisplay"></div>
+      <div id="configTab" class="tab-content">
+        
+        <details class="config-details" open>
+          <summary class="config-summary">
+            <span class="material-icons">tune</span>
+            Paramètres de génération
+            <span class="material-icons arrow">expand_more</span>
+          </summary>
+          <div class="config-content">
+            <label class="label">Saisons actives</label>
+            <div class="chip-container" id="seasonFilterChipsDisplay"></div> 
+            
+            <label class="label mt-16">Jours de sport</label>
+            <div class="chip-container" id="sportDaysChipsDisplay"></div>
 
-          <label class="label">Durée déjeuner</label>
-          <div class="chip-container">
-            <div class="chip" onclick="setMealDuration('lunch', 1)" id="lunch1Display">1 jour</div>
-            <div class="chip" onclick="setMealDuration('lunch', 2)" id="lunch2Display">2 jours</div>
-          </div>
+            <label class="label">Durée déjeuner</label>
+            <div class="chip-container">
+              <div class="chip" onclick="setMealDuration('lunch', 1)" id="lunch1Display">1 jour</div>
+              <div class="chip" onclick="setMealDuration('lunch', 2)" id="lunch2Display">2 jours</div>
+            </div>
 
-          <label class="label">Durée dîner</label>
-          <div class="chip-container">
-            <div class="chip" onclick="setMealDuration('dinner', 1)" id="dinner1Display">1 jour</div>
-            <div class="chip" onclick="setMealDuration('dinner', 2)" id="dinner2Display">2 jours</div>
+            <label class="label">Durée dîner</label>
+            <div class="chip-container">
+              <div class="chip" onclick="setMealDuration('dinner', 1)" id="dinner1Display">1 jour</div>
+              <div class="chip" onclick="setMealDuration('dinner', 2)" id="dinner2Display">2 jours</div>
+            </div>
           </div>
-        </div>
+        </details>
 
-        <div class="card">
-          <div class="card-title">
+        <details class="config-details">
+          <summary class="config-summary">
             <span class="material-icons">group</span>
-            Paramètres du groupe
-          </div>
-          
-          <label class="label">ID du groupe</label>
-          <div class="group-id-display" id="currentGroupIdDisplay"></div>
-          
-          <div class="info-text group-id-description">
-            Partagez cet ID avec d'autres personnes pour qu'ils rejoignent votre groupe et synchronisent leurs données.
-          </div>
+            Gestion du groupe
+            <span class="material-icons arrow">expand_more</span>
+          </summary>
+          <div class="config-content">
+            <label class="label">ID du groupe</label>
+            <div class="group-id-display" id="currentGroupIdDisplay"></div>
+            
+            <div class="info-text group-id-description">
+              Partagez cet ID pour inviter des membres.
+            </div>
 
-          <button class="btn btn-error" onclick="leaveGroup()" style="width: 100%;">
-            <span class="material-icons">exit_to_app</span>
-            Quitter le groupe
-          </button>
-        </div>
+            <button class="btn btn-error" onclick="leaveGroup()" style="width: 100%;">
+              <span class="material-icons">exit_to_app</span>
+              Quitter le groupe
+            </button>
+          </div>
+        </details>
+
       </div>
     </div>
   </div>
 
-  <!-- Custom Toast Notification -->
   <div id="customToast" class="custom-toast hidden">
     <span id="toastMessage"></span>
   </div>
 
-  <!-- Add/Edit Dish Modal -->
-<div id="addDishModal" class="modal">
+  <div id="addDishModal" class="modal">
     <div class="modal-content">
       <div class="modal-title" id="dishModalTitle">Nouveau plat</div>
       <input type="text" id="dishName" class="input" placeholder="Nom du plat">
 
-<div id="dishSuggestions" class="suggestions-list"></div>
-<div id="dishNameFeedback" class="input-feedback"></div>
+      <div id="dishSuggestions" class="suggestions-list"></div>
+      <div id="dishNameFeedback" class="input-feedback"></div>
       
+      <label class="label">Type de repas</label>
+      <div class="category-container" style="flex-direction: row; gap: 16px; margin-bottom: 16px;">
+        <label class="plain-checkbox">
+          <input type="checkbox" id="mealLunch" checked>
+          <span>Déjeuner</span>
+        </label>
+        <label class="plain-checkbox">
+          <input type="checkbox" id="mealDinner" checked>
+          <span>Dîner</span>
+        </label>
+      </div>
+
       <label class="label">Saisons</label>
       <div class="chip-container" id="seasonsChips"></div>
 
-      <label class="label mt-16">Catégories</label>
+      <label class="label mt-16">Tags</label>
       <div class="category-container"> 
         <label class="plain-checkbox">
           <input type="checkbox" id="sportDay">
@@ -197,64 +215,13 @@
         <button class="btn btn-filled" onclick="saveDish()" id="saveDishBtn">Ajouter</button>
       </div>
     </div>
-  </div> 
-
-  <!-- Config Modal -->
-  <div id="configModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-title">Configuration</div>
-      
-      <label class="label">Jours de sport</label>
-      <div class="chip-container" id="sportDaysChips"></div>
-
-      <label class="label">Durée déjeuner</label>
-      <div class="chip-container">
-        <div class="chip" onclick="setMealDuration('lunch', 1)" id="lunch1">1 jour</div>
-        <div class="chip" onclick="setMealDuration('lunch', 2)" id="lunch2">2 jours</div>
-      </div>
-
-      <label class="label">Durée dîner</label>
-      <div class="chip-container">
-        <div class="chip" onclick="setMealDuration('dinner', 1)" id="dinner1">1 jour</div>
-        <div class="chip" onclick="setMealDuration('dinner', 2)" id="dinner2">2 jours</div>
-      </div>
-
-      <div class="modal-buttons">
-        <button class="btn btn-filled" onclick="closeModal('configModal')">Fermer</button>
-      </div>
-    </div>
   </div>
 
-  <!-- Group Modal -->
-  <div id="groupModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-title">Paramètres du groupe</div>
-      
-      <label class="label">ID du groupe</label>
-<div style="display:flex; align-items:center; gap:8px;">
-  <div class="group-id-display" id="currentGroupIdDisplay" style="flex:1;"></div>
-  <button id="copyGroupBtn" class="icon-btn" onclick="copyGroupId()" title="Copier">
-    <span class="material-icons" id="copyIcon">content_copy</span>
-  </button>
-</div>
-      <div class="info-text">
-        Partagez cet ID avec d'autres personnes pour qu'ils rejoignent votre groupe et synchronisent leurs données.
-      </div>
-
-      <div class="modal-buttons">
-        <button class="btn btn-text" onclick="closeModal('groupModal')">Fermer</button>
-        <button class="btn btn-error" onclick="leaveGroup()">Quitter le groupe</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <script src="./script.js"></script>
 
-  <!-- ✅ Barre d'onglets en bas de page -->
   <div id="tabBar" class="tab-bar hidden">
     <button class="tab-btn active" data-tab="dishes" onclick="switchToTab('dishes')">
       <div class="icon-container">
@@ -277,7 +244,6 @@
       <span class="tab-label">Config</span>
     </button>
   </div>
-
 
 </body>
 </html>
