@@ -1,5 +1,5 @@
 // ==========================================
-// 1. CONFIGURATION & INITIALISATION FIREBASE
+// 1. CONFIGURATION FIREBASE
 // ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyCviy5lWve4UUaSpZTz9hnSPu16e_mO_2U",
@@ -11,16 +11,11 @@ const firebaseConfig = {
   appId: "1:760559115603:web:30955099b520f65c3495a6"
 };
 
-// Initialisation sécurisée
-try {
-  firebase.initializeApp(firebaseConfig);
-} catch (e) {
-  console.error("Erreur initialisation Firebase:", e);
-}
-const database = typeof firebase !== 'undefined' ? firebase.database() : null;
+// Variable globale pour la base de données (sera initialisée plus tard)
+let database = null;
 
 // ==========================================
-// 2. VARIABLES GLOBALES
+// 2. VARIABLES GLOBALES DE L'APP
 // ==========================================
 let groupId = localStorage.getItem('groupId') || '';
 let dishes = [];
@@ -133,10 +128,8 @@ function installApp() {
   }
 }
 
-// Sauvegarde le menu du jour pour le Widget Android
 function updateWidgetData() {
   if (!menus.length) return;
-  
   const currentWeek = getWeekNumber(new Date());
   const currentMenu = menus.find(m => m.weekNumber === currentWeek);
   
@@ -159,7 +152,100 @@ function updateWidgetData() {
 }
 
 // ==========================================
-// 5. MOTEUR DE GÉNÉRATION DE MENU
+// 5. INITIALISATION ROBUSTE DE FIREBASE
+// ==========================================
+
+function initFirebaseAndListen() {
+  // Attendre que la librairie Firebase soit chargée par le navigateur
+  if (typeof firebase === 'undefined' || !firebase.database) {
+    console.warn('⏳ Attente de Firebase...');
+    setTimeout(initFirebaseAndListen, 200); // Réessayer dans 200ms
+    return;
+  }
+
+  // Initialisation si nécessaire
+  if (!firebase.apps.length) {
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log("🔥 Firebase initialisé");
+    } catch (e) {
+      console.error("Erreur init Firebase:", e);
+      return;
+    }
+  }
+
+  // Récupération de l'instance database
+  database = firebase.database();
+
+  // Si on a un groupe, on lance l'écoute
+  if (groupId) {
+    listenToGroupData();
+  }
+}
+
+function listenToGroupData() {
+  if (!database || !groupId) return;
+
+  console.log('🎧 Écoute du groupe:', groupId);
+  database.ref().off(); // Nettoyer les anciens listeners
+
+  const dishesRef = database.ref(`groups/${groupId}/dishes`);
+  const menusRef = database.ref(`groups/${groupId}/menus`);
+  const configRef = database.ref(`groups/${groupId}/config`);
+
+  // Écoute des Plats
+  dishesRef.on('value', snapshot => {
+    const data = snapshot.val();
+    if (!data) {
+      dishes = [];
+    } else {
+      const dishesArray = Object.entries(data)
+        .filter(([, value]) => value !== null && value !== undefined)
+        .map(([key, value]) => ({ ...value, id: key }));
+      
+      dishes = Object.values(dishesArray.reduce((acc, dish) => {
+        if (!acc[dish.name] || acc[dish.name].id < dish.id) acc[dish.name] = dish;
+        return acc;
+      }, {}));
+    }
+    renderDishes();
+    updateSyncIcon(false);
+  });
+
+  // Écoute des Menus
+  menusRef.on('value', snapshot => {
+    const data = snapshot.val();
+    if (!data) {
+      menus = [];
+    } else {
+      const menusArray = Object.entries(data)
+        .filter(([, value]) => value !== null && value !== undefined)
+        .map(([key, value]) => ({ ...value, id: key }));
+      
+      menus = Object.values(menusArray.reduce((acc, menu) => {
+        if (!acc[menu.weekNumber] || acc[menu.weekNumber].id < menu.id) acc[menu.weekNumber] = menu;
+        return acc;
+      }, {})).sort((a, b) => b.weekNumber - a.weekNumber);
+    }
+    renderMenus();
+    updateWidgetData();
+  });
+
+  // Écoute de la Config
+  configRef.on('value', snapshot => {
+    const data = snapshot.val();
+    const defaults = { 
+        sportDays: [], 
+        activeSeasons: ['Printemps', 'Été', 'Automne', 'Hiver'], 
+        mealDuration: { lunch: 1, dinner: 1 } 
+    };
+    menuConfig = data ? { ...defaults, ...data } : defaults;
+    updateConfigUI();
+  });
+}
+
+// ==========================================
+// 6. LOGIQUE DE GÉNÉRATION & RENDU
 // ==========================================
 
 function getRecentlyUsedDishes() {
@@ -324,9 +410,108 @@ function renderMenus(menusArray = menus) {
   });
 }
 
-// ==========================================
-// 6. GESTION DE LA CONFIGURATION
-// ==========================================
+// ===== PLATS & FILTRES =====
+
+function toggleFilter(filter) {
+  if (activeFilters.includes(filter)) {
+    activeFilters = activeFilters.filter(f => f !== filter);
+    document.getElementById('filter_' + filter).classList.remove('active');
+  } else {
+    activeFilters.push(filter);
+    document.getElementById('filter_' + filter).classList.add('active');
+  }
+  renderDishes();
+}
+
+function renderDishes() {
+  let filteredDishes = dishes.filter(d => {
+    if (activeFilters.length === 0) return true;
+    let match = true;
+    if (activeFilters.includes('lunch') && d.mealType && !d.mealType.includes('lunch')) match = false;
+    if (activeFilters.includes('dinner') && d.mealType && !d.mealType.includes('dinner')) match = false;
+    if (activeFilters.includes('sport') && !d.sportDay) match = false;
+    if (activeFilters.includes('vege') && !d.vegetarian) match = false;
+    if (activeFilters.includes('summer') && !d.seasons.includes('Été')) match = false;
+    if (activeFilters.includes('winter') && !d.seasons.includes('Hiver')) match = false;
+    return match;
+  });
+
+  filteredDishes.sort((a, b) => a.name.localeCompare(b.name));
+
+  const container = document.getElementById('dishesContainer');
+  const listWrapper = document.getElementById('dishesList');
+  const emptyState = document.getElementById('noDishes');
+  const countSpan = document.getElementById('dishCount');
+
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!filteredDishes.length) {
+    if (listWrapper) listWrapper.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+  if (listWrapper) listWrapper.classList.remove('hidden');
+  if (countSpan) countSpan.textContent = filteredDishes.length.toString();
+
+  filteredDishes.forEach(dish => {
+    const isLunch = !dish.mealType || dish.mealType.includes('lunch');
+    const isDinner = !dish.mealType || dish.mealType.includes('dinner');
+    let mealTags = '';
+    
+    if (isLunch && isDinner) mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
+    else if (isLunch) mealTags = '<span class="tag tag-lunch">☀️ Midi</span>';
+    else if (isDinner) mealTags = '<span class="tag tag-dinner">🌙 Soir</span>';
+
+    const iconName = getDishIcon(dish.name);
+
+    const cardWrapper = document.createElement('div');
+    cardWrapper.className = 'dish-card-wrapper';
+    
+    const seasonsHtml = dish.seasons.map(s => {
+      let seasonClass = 'tag-season';
+      if (s === 'Printemps') seasonClass = 'tag-spring';
+      if (s === 'Été') seasonClass = 'tag-summer';
+      if (s === 'Automne') seasonClass = 'tag-autumn';
+      if (s === 'Hiver') seasonClass = 'tag-winter';
+      return `<span class="tag ${seasonClass}">${s}</span>`;
+    }).join('');
+
+    cardWrapper.innerHTML = `
+      <div class="dish-card-content">
+        <div class="dish-icon-area">
+           <span class="material-icons">${iconName}</span>
+        </div>
+        <div class="dish-info">
+          <h3>${dish.name}</h3>
+          <div class="tags">
+              ${mealTags}
+              ${seasonsHtml}
+              ${dish.sportDay ? '<span class="tag tag-sport">Sport</span>' : ''}
+              ${dish.vegetarian ? '<span class="tag tag-veg">Végé</span>' : ''}
+              ${dish.grillades ? '<span class="tag tag-grill">Grill</span>' : ''}
+          </div>
+        </div>
+        <div class="swipe-hint">
+           <span class="material-icons">chevron_left</span>
+        </div>
+      </div>
+      <div class="dish-actions-swipe">
+        <button class="action-btn edit" onclick="openEditDishModal('${dish.id}')">
+            <span class="material-icons">edit</span>
+        </button>
+        <button class="action-btn delete" onclick="deleteDish('${dish.id}')">
+            <span class="material-icons">delete</span>
+        </button>
+      </div>
+    `;
+    container.appendChild(cardWrapper);
+  });
+}
+
+// ===== CONFIGURATION UI =====
 
 function toggleConfigSeason(season) {
   menuConfig.activeSeasons = menuConfig.activeSeasons || []; 
@@ -382,9 +567,7 @@ function updateConfigUI() {
   if (d1d) d1d.classList.add('selected');
 }
 
-// ==========================================
-// 7. GESTION DES RECETTES (CRUD & FILTRES)
-// ==========================================
+// ===== MODALES & SAISONS =====
 
 function updateSeasonChipsUI() {
   const chips = document.querySelectorAll('#seasonsChips .chip');
@@ -435,109 +618,6 @@ function initSportDaysChips() {
   });
 }
 
-function toggleFilter(filter) {
-  if (activeFilters.includes(filter)) {
-    activeFilters = activeFilters.filter(f => f !== filter);
-    document.getElementById('filter_' + filter).classList.remove('active');
-  } else {
-    activeFilters.push(filter);
-    document.getElementById('filter_' + filter).classList.add('active');
-  }
-  renderDishes();
-}
-
-function renderDishes() {
-  let filteredDishes = dishes.filter(d => {
-    if (activeFilters.length === 0) return true;
-    let match = true;
-    if (activeFilters.includes('lunch') && d.mealType && !d.mealType.includes('lunch')) match = false;
-    if (activeFilters.includes('dinner') && d.mealType && !d.mealType.includes('dinner')) match = false;
-    if (activeFilters.includes('sport') && !d.sportDay) match = false;
-    if (activeFilters.includes('vege') && !d.vegetarian) match = false;
-    if (activeFilters.includes('summer') && !d.seasons.includes('Été')) match = false;
-    if (activeFilters.includes('winter') && !d.seasons.includes('Hiver')) match = false;
-    return match;
-  });
-
-  filteredDishes.sort((a, b) => a.name.localeCompare(b.name));
-
-  const container = document.getElementById('dishesContainer');
-  const listWrapper = document.getElementById('dishesList');
-  const emptyState = document.getElementById('noDishes');
-  const countSpan = document.getElementById('dishCount');
-
-  if (!container) return;
-  container.innerHTML = '';
-
-  if (!filteredDishes.length) {
-    if (listWrapper) listWrapper.classList.add('hidden');
-    if (emptyState) emptyState.classList.remove('hidden');
-    return;
-  }
-
-  if (emptyState) emptyState.classList.add('hidden');
-  if (listWrapper) listWrapper.classList.remove('hidden');
-  if (countSpan) countSpan.textContent = filteredDishes.length.toString();
-
-  filteredDishes.forEach(dish => {
-    const isLunch = !dish.mealType || dish.mealType.includes('lunch');
-    const isDinner = !dish.mealType || dish.mealType.includes('dinner');
-    let mealTags = '';
-    
-    if (isLunch && isDinner) {
-      mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
-    } else if (isLunch) {
-      mealTags = '<span class="tag tag-lunch">☀️ Midi</span>';
-    } else if (isDinner) {
-      mealTags = '<span class="tag tag-dinner">🌙 Soir</span>';
-    }
-
-    const iconName = getDishIcon(dish.name);
-
-    const cardWrapper = document.createElement('div');
-    cardWrapper.className = 'dish-card-wrapper';
-    
-    const seasonsHtml = dish.seasons.map(s => {
-      let seasonClass = 'tag-season';
-      if (s === 'Printemps') seasonClass = 'tag-spring';
-      if (s === 'Été') seasonClass = 'tag-summer';
-      if (s === 'Automne') seasonClass = 'tag-autumn';
-      if (s === 'Hiver') seasonClass = 'tag-winter';
-      return `<span class="tag ${seasonClass}">${s}</span>`;
-    }).join('');
-
-    cardWrapper.innerHTML = `
-      <div class="dish-card-content">
-        <div class="dish-icon-area">
-           <span class="material-icons">${iconName}</span>
-        </div>
-        <div class="dish-info">
-          <h3>${dish.name}</h3>
-          <div class="tags">
-              ${mealTags}
-              ${seasonsHtml}
-              ${dish.sportDay ? '<span class="tag tag-sport">Sport</span>' : ''}
-              ${dish.vegetarian ? '<span class="tag tag-veg">Végé</span>' : ''}
-              ${dish.grillades ? '<span class="tag tag-grill">Grill</span>' : ''}
-          </div>
-        </div>
-        <div class="swipe-hint">
-           <span class="material-icons">chevron_left</span>
-        </div>
-      </div>
-      <div class="dish-actions-swipe">
-        <button class="action-btn edit" onclick="openEditDishModal('${dish.id}')">
-            <span class="material-icons">edit</span>
-        </button>
-        <button class="action-btn delete" onclick="deleteDish('${dish.id}')">
-            <span class="material-icons">delete</span>
-        </button>
-      </div>
-    `;
-    container.appendChild(cardWrapper);
-  });
-}
-
 function openAddDishModal() {
   editingDishId = null;
   document.getElementById('dishModalTitle').textContent = 'Nouveau plat';
@@ -553,21 +633,14 @@ function openAddDishModal() {
   document.getElementById('mealLunch').checked = true;
   document.getElementById('mealDinner').checked = true;
   
-  const dishNameFeedback = document.getElementById('dishNameFeedback');
-  if (dishNameFeedback) {
-    dishNameFeedback.textContent = '';
-    dishNameFeedback.className = 'input-feedback';
-  }
-  const dishSuggestions = document.getElementById('dishSuggestions');
-  if (dishSuggestions) {
-    dishSuggestions.innerHTML = '';
-    dishSuggestions.style.display = 'none';
-  }
+  const feedback = document.getElementById('dishNameFeedback');
+  if(feedback) feedback.textContent = '';
+  const sugg = document.getElementById('dishSuggestions');
+  if(sugg) { sugg.innerHTML = ''; sugg.style.display = 'none'; }
   
   openModal('addDishModal');
 }
 
-// CORRECTION : Prend un ID
 function openEditDishModal(dishId) {
   const dish = dishes.find(d => d.id == dishId);
   if (!dish) return;
@@ -578,7 +651,7 @@ function openEditDishModal(dishId) {
   document.getElementById('dishName').value = dish.name;
   
   newDishSeasons = [...(dish.seasons || [])]; 
-  updateSeasonChipsUI(); 
+  updateSeasonChipsUI();
   
   document.getElementById('sportDay').checked = dish.sportDay || false;
   document.getElementById('vegetarian').checked = dish.vegetarian || false;
@@ -589,13 +662,10 @@ function openEditDishModal(dishId) {
   document.getElementById('mealLunch').checked = isLunch;
   document.getElementById('mealDinner').checked = isDinner;
   
-  const dishNameFeedback = document.getElementById('dishNameFeedback');
-  if (dishNameFeedback) dishNameFeedback.textContent = '';
-  const dishSuggestions = document.getElementById('dishSuggestions');
-  if (dishSuggestions) {
-    dishSuggestions.innerHTML = '';
-    dishSuggestions.style.display = 'none';
-  }
+  const feedback = document.getElementById('dishNameFeedback');
+  if(feedback) feedback.textContent = '';
+  const sugg = document.getElementById('dishSuggestions');
+  if(sugg) { sugg.innerHTML = ''; sugg.style.display = 'none'; }
   
   openModal('addDishModal');
 }
@@ -647,7 +717,7 @@ function deleteDish(id) {
 }
 
 // ==========================================
-// 8. GROUPES & NAVIGATION
+// 9. NAVIGATION & UTILITAIRES INTERFACE
 // ==========================================
 
 function showGroupTypeSelection() {
@@ -667,7 +737,7 @@ function showCreateGroup() {
   alert('ID du groupe :\n\n' + groupId + '\n\nPartagez cet ID avec vos amis !');
   
   showMainApp();
-  listenToFirebase();
+  initFirebaseAndListen();
 }
 
 function showJoinGroup() {
@@ -684,7 +754,7 @@ function joinGroup() {
   groupId = input;
   localStorage.setItem('groupId', groupId);
   showMainApp();
-  listenToFirebase();
+  initFirebaseAndListen();
   showToast('✅ Groupe rejoint !');
 }
 
@@ -722,7 +792,7 @@ function copyGroupId() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(id).then(() => {
       showToast('📋 ID copié !');
-    }).catch((err) => {
+    }).catch(() => {
       fallbackCopy(id);
     });
     return;
@@ -799,84 +869,50 @@ function updateMenusTab() {
   }
 }
 
-function listenToFirebase() {
-  if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
-    setTimeout(listenToFirebase, 500);
-    return;
+function updateConfigDisplay() {
+  const sportDaysContainer = document.getElementById('sportDaysChipsDisplay');
+  const sportDaysList = menuConfig.sportDays || [];
+  
+  if (sportDaysContainer && sportDaysContainer.children.length === 0) {
+    daysOfWeek.forEach(day => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = day;
+      chip.id = 'sport_display_' + day;
+      chip.onclick = () => toggleSportDay(day);
+      if (sportDaysList.includes(day)) chip.classList.add('selected');
+      sportDaysContainer.appendChild(chip);
+    });
+  } else if (sportDaysContainer) {
+    daysOfWeek.forEach(day => {
+        const chipDisplay = document.getElementById('sport_display_' + day);
+        if (chipDisplay) chipDisplay.classList.toggle('selected', sportDaysList.includes(day));
+    });
   }
-  if (!database || !groupId) return;
 
-  database.ref().off();
-  const dishesRef = database.ref(`groups/${groupId}/dishes`);
-  const menusRef = database.ref(`groups/${groupId}/menus`);
-  const configRef = database.ref(`groups/${groupId}/config`);
-
-  dishesRef.on('value', snapshot => {
-    const data = snapshot.val();
-    if (!data) {
-      dishes = [];
-      renderDishes();
-      updateSyncIcon(false);
-      return;
-    }
-    const dishesArray = Object.entries(data)
-      .filter(([, value]) => value !== null && value !== undefined)
-      .map(([key, value]) => ({ ...value, id: key }));
-    
-    dishes = Object.values(dishesArray.reduce((acc, dish) => {
-      if (!acc[dish.name] || acc[dish.name].id < dish.id) acc[dish.name] = dish;
-      return acc;
-    }, {}));
-    
-    renderDishes();
-    updateSyncIcon(false);
-  });
-
-  menusRef.on('value', snapshot => {
-    const data = snapshot.val();
-    if (!data) {
-      menus = [];
-      renderMenus();
-      return;
-    }
-    const menusArray = Object.entries(data)
-      .filter(([, value]) => value !== null && value !== undefined)
-      .map(([key, value]) => ({ ...value, id: key }));
-    
-    menus = Object.values(menusArray.reduce((acc, menu) => {
-      if (!acc[menu.weekNumber] || acc[menu.weekNumber].id < menu.id) acc[menu.weekNumber] = menu;
-      return acc;
-    }, {})).sort((a, b) => b.weekNumber - a.weekNumber);
-    
-    renderMenus();
-    updateWidgetData(); 
-  });
-
-  configRef.on('value', snapshot => {
-    const data = snapshot.val();
-    const defaults = { sportDays: [], activeSeasons: seasons, mealDuration: { lunch: 1, dinner: 1 } };
-    if (data) {
-      menuConfig = { ...defaults, ...data }; 
-    } else {
-      menuConfig = defaults;
-    }
-    updateConfigUI();
-  });
-}
-
-function setupTooltip() {
-  const syncIcon = document.getElementById('syncIcon');
-  if (!syncIcon) return;
-
-  let touchTimer;
-  syncIcon.addEventListener('touchstart', (e) => {
-    touchTimer = setTimeout(() => {
-      showToast(`Groupe : ${groupId}`, 2000);
-    }, 500);
-  });
-  syncIcon.addEventListener('touchend', () => {
-    clearTimeout(touchTimer);
-  });
+  const seasonDaysContainer = document.getElementById('seasonFilterChipsDisplay');
+  const activeSeasonsList = menuConfig.activeSeasons || [];
+  
+  if (seasonDaysContainer && seasonDaysContainer.children.length === 0) {
+    seasons.forEach(season => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = season;
+      chip.id = 'season_display_' + season; 
+      chip.onclick = () => toggleConfigSeason(season); 
+      if (activeSeasonsList.includes(season)) chip.classList.add('selected');
+      seasonDaysContainer.appendChild(chip);
+    });
+  } else if (seasonDaysContainer) {
+    seasons.forEach(season => {
+        const chipDisplay = document.getElementById('season_display_' + season);
+        if (chipDisplay) chipDisplay.classList.toggle('selected', activeSeasonsList.includes(season));
+    });
+  }
+  
+  const groupIdDisplay = document.getElementById('currentGroupIdDisplay');
+  if (groupIdDisplay) groupIdDisplay.textContent = groupId;
+  updateConfigUI(); 
 }
 
 function showToast(message, duration = 3000) {
@@ -908,6 +944,21 @@ function updateSyncIcon(syncing, error = false) {
     indicator.classList.remove('hidden', 'error');
     icon.textContent = 'check_circle';
   }
+}
+
+function setupTooltip() {
+  const syncIcon = document.getElementById('syncIcon');
+  if (!syncIcon) return;
+
+  let touchTimer;
+  syncIcon.addEventListener('touchstart', (e) => {
+    touchTimer = setTimeout(() => {
+      showToast(`Groupe : ${groupId}`, 2000);
+    }, 500);
+  });
+  syncIcon.addEventListener('touchend', () => {
+    clearTimeout(touchTimer);
+  });
 }
 
 // EVENTS LISTENER INPUT
@@ -961,7 +1012,7 @@ if (dishNameInputEl) {
   });
 }
 
-// ===== EXPORTS =====
+// ===== EXPORTS GLOBAUX =====
 window.showGroupTypeSelection = showGroupTypeSelection;
 window.showCreateGroup = showCreateGroup;
 window.showJoinGroup = showJoinGroup;
@@ -982,6 +1033,7 @@ window.openEditDishModal = openEditDishModal;
 window.deleteDish = deleteDish;
 window.toggleFilter = toggleFilter;
 window.toggleSeasonChip = toggleSeasonChip;
+window.setupTooltip = setupTooltip; // Ajouté
 
 // ===== INITIALISATION FINALE =====
 window.onload = function() {
@@ -994,7 +1046,7 @@ window.onload = function() {
   if (groupId) {
     console.log('🔗 Groupe existant:', groupId);
     showMainApp();
-    listenToFirebase();
+    initFirebaseAndListen();
   } else {
     console.log('🕓 Aucun groupe');
     showGroupTypeSelection();
