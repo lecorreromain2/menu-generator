@@ -11,7 +11,7 @@ const firebaseConfig = {
   appId: "1:760559115603:web:30955099b520f65c3495a6"
 };
 
-// Variable globale pour la base de données (sera initialisée plus tard)
+// Variable globale pour la base de données
 let database = null;
 
 // ==========================================
@@ -410,108 +410,9 @@ function renderMenus(menusArray = menus) {
   });
 }
 
-// ===== PLATS & FILTRES =====
-
-function toggleFilter(filter) {
-  if (activeFilters.includes(filter)) {
-    activeFilters = activeFilters.filter(f => f !== filter);
-    document.getElementById('filter_' + filter).classList.remove('active');
-  } else {
-    activeFilters.push(filter);
-    document.getElementById('filter_' + filter).classList.add('active');
-  }
-  renderDishes();
-}
-
-function renderDishes() {
-  let filteredDishes = dishes.filter(d => {
-    if (activeFilters.length === 0) return true;
-    let match = true;
-    if (activeFilters.includes('lunch') && d.mealType && !d.mealType.includes('lunch')) match = false;
-    if (activeFilters.includes('dinner') && d.mealType && !d.mealType.includes('dinner')) match = false;
-    if (activeFilters.includes('sport') && !d.sportDay) match = false;
-    if (activeFilters.includes('vege') && !d.vegetarian) match = false;
-    if (activeFilters.includes('summer') && !d.seasons.includes('Été')) match = false;
-    if (activeFilters.includes('winter') && !d.seasons.includes('Hiver')) match = false;
-    return match;
-  });
-
-  filteredDishes.sort((a, b) => a.name.localeCompare(b.name));
-
-  const container = document.getElementById('dishesContainer');
-  const listWrapper = document.getElementById('dishesList');
-  const emptyState = document.getElementById('noDishes');
-  const countSpan = document.getElementById('dishCount');
-
-  if (!container) return;
-  container.innerHTML = '';
-
-  if (!filteredDishes.length) {
-    if (listWrapper) listWrapper.classList.add('hidden');
-    if (emptyState) emptyState.classList.remove('hidden');
-    return;
-  }
-
-  if (emptyState) emptyState.classList.add('hidden');
-  if (listWrapper) listWrapper.classList.remove('hidden');
-  if (countSpan) countSpan.textContent = filteredDishes.length.toString();
-
-  filteredDishes.forEach(dish => {
-    const isLunch = !dish.mealType || dish.mealType.includes('lunch');
-    const isDinner = !dish.mealType || dish.mealType.includes('dinner');
-    let mealTags = '';
-    
-    if (isLunch && isDinner) mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
-    else if (isLunch) mealTags = '<span class="tag tag-lunch">☀️ Midi</span>';
-    else if (isDinner) mealTags = '<span class="tag tag-dinner">🌙 Soir</span>';
-
-    const iconName = getDishIcon(dish.name);
-
-    const cardWrapper = document.createElement('div');
-    cardWrapper.className = 'dish-card-wrapper';
-    
-    const seasonsHtml = dish.seasons.map(s => {
-      let seasonClass = 'tag-season';
-      if (s === 'Printemps') seasonClass = 'tag-spring';
-      if (s === 'Été') seasonClass = 'tag-summer';
-      if (s === 'Automne') seasonClass = 'tag-autumn';
-      if (s === 'Hiver') seasonClass = 'tag-winter';
-      return `<span class="tag ${seasonClass}">${s}</span>`;
-    }).join('');
-
-    cardWrapper.innerHTML = `
-      <div class="dish-card-content">
-        <div class="dish-icon-area">
-           <span class="material-icons">${iconName}</span>
-        </div>
-        <div class="dish-info">
-          <h3>${dish.name}</h3>
-          <div class="tags">
-              ${mealTags}
-              ${seasonsHtml}
-              ${dish.sportDay ? '<span class="tag tag-sport">Sport</span>' : ''}
-              ${dish.vegetarian ? '<span class="tag tag-veg">Végé</span>' : ''}
-              ${dish.grillades ? '<span class="tag tag-grill">Grill</span>' : ''}
-          </div>
-        </div>
-        <div class="swipe-hint">
-           <span class="material-icons">chevron_left</span>
-        </div>
-      </div>
-      <div class="dish-actions-swipe">
-        <button class="action-btn edit" onclick="openEditDishModal('${dish.id}')">
-            <span class="material-icons">edit</span>
-        </button>
-        <button class="action-btn delete" onclick="deleteDish('${dish.id}')">
-            <span class="material-icons">delete</span>
-        </button>
-      </div>
-    `;
-    container.appendChild(cardWrapper);
-  });
-}
-
-// ===== CONFIGURATION UI =====
+// ==========================================
+// 6. GESTION DE LA CONFIGURATION
+// ==========================================
 
 function toggleConfigSeason(season) {
   menuConfig.activeSeasons = menuConfig.activeSeasons || []; 
@@ -567,7 +468,9 @@ function updateConfigUI() {
   if (d1d) d1d.classList.add('selected');
 }
 
-// ===== MODALES & SAISONS =====
+// ==========================================
+// 7. GESTION DES RECETTES (CRUD & FILTRES)
+// ==========================================
 
 function updateSeasonChipsUI() {
   const chips = document.querySelectorAll('#seasonsChips .chip');
@@ -618,6 +521,109 @@ function initSportDaysChips() {
   });
 }
 
+function toggleFilter(filter) {
+  if (activeFilters.includes(filter)) {
+    activeFilters = activeFilters.filter(f => f !== filter);
+    document.getElementById('filter_' + filter).classList.remove('active');
+  } else {
+    activeFilters.push(filter);
+    document.getElementById('filter_' + filter).classList.add('active');
+  }
+  renderDishes();
+}
+
+function renderDishes() {
+  let filteredDishes = dishes.filter(d => {
+    if (activeFilters.length === 0) return true;
+    let match = true;
+    if (activeFilters.includes('lunch') && d.mealType && !d.mealType.includes('lunch')) match = false;
+    if (activeFilters.includes('dinner') && d.mealType && !d.mealType.includes('dinner')) match = false;
+    if (activeFilters.includes('sport') && !d.sportDay) match = false;
+    if (activeFilters.includes('vege') && !d.vegetarian) match = false;
+    if (activeFilters.includes('summer') && !d.seasons.includes('Été')) match = false;
+    if (activeFilters.includes('winter') && !d.seasons.includes('Hiver')) match = false;
+    return match;
+  });
+
+  filteredDishes.sort((a, b) => a.name.localeCompare(b.name));
+
+  const container = document.getElementById('dishesContainer');
+  const listWrapper = document.getElementById('dishesList');
+  const emptyState = document.getElementById('noDishes');
+  const countSpan = document.getElementById('dishCount');
+
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!filteredDishes.length) {
+    if (listWrapper) listWrapper.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+  if (listWrapper) listWrapper.classList.remove('hidden');
+  if (countSpan) countSpan.textContent = filteredDishes.length.toString();
+
+  filteredDishes.forEach(dish => {
+    const isLunch = !dish.mealType || dish.mealType.includes('lunch');
+    const isDinner = !dish.mealType || dish.mealType.includes('dinner');
+    let mealTags = '';
+    
+    if (isLunch && isDinner) {
+      mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
+    } else if (isLunch) {
+      mealTags = '<span class="tag tag-lunch">☀️ Midi</span>';
+    } else if (isDinner) {
+      mealTags = '<span class="tag tag-dinner">🌙 Soir</span>';
+    }
+
+    const iconName = getDishIcon(dish.name);
+
+    const cardWrapper = document.createElement('div');
+    cardWrapper.className = 'dish-card-wrapper';
+    
+    const seasonsHtml = dish.seasons.map(s => {
+      let seasonClass = 'tag-season';
+      if (s === 'Printemps') seasonClass = 'tag-spring';
+      if (s === 'Été') seasonClass = 'tag-summer';
+      if (s === 'Automne') seasonClass = 'tag-autumn';
+      if (s === 'Hiver') seasonClass = 'tag-winter';
+      return `<span class="tag ${seasonClass}">${s}</span>`;
+    }).join('');
+
+    cardWrapper.innerHTML = `
+      <div class="dish-card-content">
+        <div class="dish-icon-area">
+           <span class="material-icons">${iconName}</span>
+        </div>
+        <div class="dish-info">
+          <h3>${dish.name}</h3>
+          <div class="tags">
+              ${mealTags}
+              ${seasonsHtml}
+              ${dish.sportDay ? '<span class="tag tag-sport">Sport</span>' : ''}
+              ${dish.vegetarian ? '<span class="tag tag-veg">Végé</span>' : ''}
+              ${dish.grillades ? '<span class="tag tag-grill">Grill</span>' : ''}
+          </div>
+        </div>
+        <div class="swipe-hint">
+           <span class="material-icons">chevron_left</span>
+        </div>
+      </div>
+      <div class="dish-actions-swipe">
+        <button class="action-btn edit" onclick="openEditDishModal('${dish.id}')">
+            <span class="material-icons">edit</span>
+        </button>
+        <button class="action-btn delete" onclick="deleteDish('${dish.id}')">
+            <span class="material-icons">delete</span>
+        </button>
+      </div>
+    `;
+    container.appendChild(cardWrapper);
+  });
+}
+
 function openAddDishModal() {
   editingDishId = null;
   document.getElementById('dishModalTitle').textContent = 'Nouveau plat';
@@ -630,13 +636,20 @@ function openAddDishModal() {
   document.getElementById('sportDay').checked = false;
   document.getElementById('vegetarian').checked = false;
   document.getElementById('grillades').checked = false;
+  
   document.getElementById('mealLunch').checked = true;
   document.getElementById('mealDinner').checked = true;
   
-  const feedback = document.getElementById('dishNameFeedback');
-  if(feedback) feedback.textContent = '';
-  const sugg = document.getElementById('dishSuggestions');
-  if(sugg) { sugg.innerHTML = ''; sugg.style.display = 'none'; }
+  const dishNameFeedback = document.getElementById('dishNameFeedback');
+  if (dishNameFeedback) {
+    dishNameFeedback.textContent = '';
+    dishNameFeedback.className = 'input-feedback';
+  }
+  const dishSuggestions = document.getElementById('dishSuggestions');
+  if (dishSuggestions) {
+    dishSuggestions.innerHTML = '';
+    dishSuggestions.style.display = 'none';
+  }
   
   openModal('addDishModal');
 }
@@ -662,10 +675,13 @@ function openEditDishModal(dishId) {
   document.getElementById('mealLunch').checked = isLunch;
   document.getElementById('mealDinner').checked = isDinner;
   
-  const feedback = document.getElementById('dishNameFeedback');
-  if(feedback) feedback.textContent = '';
-  const sugg = document.getElementById('dishSuggestions');
-  if(sugg) { sugg.innerHTML = ''; sugg.style.display = 'none'; }
+  const dishNameFeedback = document.getElementById('dishNameFeedback');
+  if (dishNameFeedback) dishNameFeedback.textContent = '';
+  const dishSuggestions = document.getElementById('dishSuggestions');
+  if (dishSuggestions) {
+    dishSuggestions.innerHTML = '';
+    dishSuggestions.style.display = 'none';
+  }
   
   openModal('addDishModal');
 }
@@ -717,7 +733,7 @@ function deleteDish(id) {
 }
 
 // ==========================================
-// 9. NAVIGATION & UTILITAIRES INTERFACE
+// 8. GROUPES & NAVIGATION
 // ==========================================
 
 function showGroupTypeSelection() {
@@ -792,7 +808,7 @@ function copyGroupId() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(id).then(() => {
       showToast('📋 ID copié !');
-    }).catch(() => {
+    }).catch((err) => {
       fallbackCopy(id);
     });
     return;
@@ -1046,7 +1062,7 @@ window.onload = function() {
   if (groupId) {
     console.log('🔗 Groupe existant:', groupId);
     showMainApp();
-    initFirebaseAndListen();
+    initFirebaseAndListen(); // <--- Le nom correct ici
   } else {
     console.log('🕓 Aucun groupe');
     showGroupTypeSelection();
