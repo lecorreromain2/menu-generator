@@ -1,5 +1,5 @@
 // ==========================================
-// 1. CONFIGURATION FIREBASE
+// 1. CONFIGURATION & INITIALISATION FIREBASE
 // ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyCviy5lWve4UUaSpZTz9hnSPu16e_mO_2U",
@@ -11,11 +11,16 @@ const firebaseConfig = {
   appId: "1:760559115603:web:30955099b520f65c3495a6"
 };
 
-// Variable globale pour la base de données
-let database = null;
+// Initialisation sécurisée
+try {
+  firebase.initializeApp(firebaseConfig);
+} catch (e) {
+  console.error("Erreur initialisation Firebase:", e);
+}
+let database = typeof firebase !== 'undefined' ? firebase.database() : null;
 
 // ==========================================
-// 2. VARIABLES GLOBALES DE L'APP
+// 2. VARIABLES GLOBALES
 // ==========================================
 let groupId = localStorage.getItem('groupId') || '';
 let dishes = [];
@@ -156,28 +161,24 @@ function updateWidgetData() {
 // ==========================================
 
 function initFirebaseAndListen() {
-  // Attendre que la librairie Firebase soit chargée par le navigateur
+  // Attendre que la librairie Firebase soit chargée
   if (typeof firebase === 'undefined' || !firebase.database) {
     console.warn('⏳ Attente de Firebase...');
-    setTimeout(initFirebaseAndListen, 200); // Réessayer dans 200ms
+    setTimeout(initFirebaseAndListen, 200); 
     return;
   }
 
-  // Initialisation si nécessaire
   if (!firebase.apps.length) {
     try {
       firebase.initializeApp(firebaseConfig);
-      console.log("🔥 Firebase initialisé");
     } catch (e) {
       console.error("Erreur init Firebase:", e);
       return;
     }
   }
 
-  // Récupération de l'instance database
   database = firebase.database();
 
-  // Si on a un groupe, on lance l'écoute
   if (groupId) {
     listenToGroupData();
   }
@@ -187,13 +188,12 @@ function listenToGroupData() {
   if (!database || !groupId) return;
 
   console.log('🎧 Écoute du groupe:', groupId);
-  database.ref().off(); // Nettoyer les anciens listeners
+  database.ref().off(); 
 
   const dishesRef = database.ref(`groups/${groupId}/dishes`);
   const menusRef = database.ref(`groups/${groupId}/menus`);
   const configRef = database.ref(`groups/${groupId}/config`);
 
-  // Écoute des Plats
   dishesRef.on('value', snapshot => {
     const data = snapshot.val();
     if (!data) {
@@ -212,7 +212,6 @@ function listenToGroupData() {
     updateSyncIcon(false);
   });
 
-  // Écoute des Menus
   menusRef.on('value', snapshot => {
     const data = snapshot.val();
     if (!data) {
@@ -231,7 +230,6 @@ function listenToGroupData() {
     updateWidgetData();
   });
 
-  // Écoute de la Config
   configRef.on('value', snapshot => {
     const data = snapshot.val();
     const defaults = { 
@@ -583,7 +581,7 @@ function renderDishes() {
     const cardWrapper = document.createElement('div');
     cardWrapper.className = 'dish-card-wrapper';
     
-    const seasonsHtml = dish.seasons.map(s => {
+    const seasonsHtml = (dish.seasons || []).map(s => {
       let seasonClass = 'tag-season';
       if (s === 'Printemps') seasonClass = 'tag-spring';
       if (s === 'Été') seasonClass = 'tag-summer';
@@ -636,7 +634,6 @@ function openAddDishModal() {
   document.getElementById('sportDay').checked = false;
   document.getElementById('vegetarian').checked = false;
   document.getElementById('grillades').checked = false;
-  
   document.getElementById('mealLunch').checked = true;
   document.getElementById('mealDinner').checked = true;
   
@@ -664,7 +661,7 @@ function openEditDishModal(dishId) {
   document.getElementById('dishName').value = dish.name;
   
   newDishSeasons = [...(dish.seasons || [])]; 
-  updateSeasonChipsUI();
+  updateSeasonChipsUI(); 
   
   document.getElementById('sportDay').checked = dish.sportDay || false;
   document.getElementById('vegetarian').checked = dish.vegetarian || false;
@@ -885,52 +882,6 @@ function updateMenusTab() {
   }
 }
 
-function updateConfigDisplay() {
-  const sportDaysContainer = document.getElementById('sportDaysChipsDisplay');
-  const sportDaysList = menuConfig.sportDays || [];
-  
-  if (sportDaysContainer && sportDaysContainer.children.length === 0) {
-    daysOfWeek.forEach(day => {
-      const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.textContent = day;
-      chip.id = 'sport_display_' + day;
-      chip.onclick = () => toggleSportDay(day);
-      if (sportDaysList.includes(day)) chip.classList.add('selected');
-      sportDaysContainer.appendChild(chip);
-    });
-  } else if (sportDaysContainer) {
-    daysOfWeek.forEach(day => {
-        const chipDisplay = document.getElementById('sport_display_' + day);
-        if (chipDisplay) chipDisplay.classList.toggle('selected', sportDaysList.includes(day));
-    });
-  }
-
-  const seasonDaysContainer = document.getElementById('seasonFilterChipsDisplay');
-  const activeSeasonsList = menuConfig.activeSeasons || [];
-  
-  if (seasonDaysContainer && seasonDaysContainer.children.length === 0) {
-    seasons.forEach(season => {
-      const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.textContent = season;
-      chip.id = 'season_display_' + season; 
-      chip.onclick = () => toggleConfigSeason(season); 
-      if (activeSeasonsList.includes(season)) chip.classList.add('selected');
-      seasonDaysContainer.appendChild(chip);
-    });
-  } else if (seasonDaysContainer) {
-    seasons.forEach(season => {
-        const chipDisplay = document.getElementById('season_display_' + season);
-        if (chipDisplay) chipDisplay.classList.toggle('selected', activeSeasonsList.includes(season));
-    });
-  }
-  
-  const groupIdDisplay = document.getElementById('currentGroupIdDisplay');
-  if (groupIdDisplay) groupIdDisplay.textContent = groupId;
-  updateConfigUI(); 
-}
-
 function showToast(message, duration = 3000) {
   const toast = document.getElementById('customToast');
   const toastMsg = document.getElementById('toastMessage');
@@ -975,6 +926,20 @@ function setupTooltip() {
   syncIcon.addEventListener('touchend', () => {
     clearTimeout(touchTimer);
   });
+}
+
+function toggleMenuContent(id) {
+  const content = document.getElementById(id);
+  const icon = document.getElementById('icon-' + id);
+  if (!content || !icon) return;
+  const isOpen = content.classList.contains('open');
+  if (isOpen) {
+    content.classList.remove('open');
+    icon.textContent = 'expand_more';
+  } else {
+    content.classList.add('open');
+    icon.textContent = 'expand_less';
+  }
 }
 
 // EVENTS LISTENER INPUT
@@ -1049,7 +1014,7 @@ window.openEditDishModal = openEditDishModal;
 window.deleteDish = deleteDish;
 window.toggleFilter = toggleFilter;
 window.toggleSeasonChip = toggleSeasonChip;
-window.setupTooltip = setupTooltip; // Ajouté
+window.setupTooltip = setupTooltip;
 
 // ===== INITIALISATION FINALE =====
 window.onload = function() {
@@ -1062,7 +1027,7 @@ window.onload = function() {
   if (groupId) {
     console.log('🔗 Groupe existant:', groupId);
     showMainApp();
-    initFirebaseAndListen(); // <--- Le nom correct ici
+    initFirebaseAndListen();
   } else {
     console.log('🕓 Aucun groupe');
     showGroupTypeSelection();
