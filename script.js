@@ -15,7 +15,7 @@ const firebaseConfig = {
 try {
   firebase.initializeApp(firebaseConfig);
 } catch (e) {
-  console.error("Erreur init Firebase:", e);
+  console.error("Erreur initialisation Firebase:", e);
 }
 let database = typeof firebase !== 'undefined' ? firebase.database() : null;
 
@@ -230,7 +230,8 @@ function renderDishes() {
     }).join('');
 
     const iconName = getDishIcon(dish.name);
-    // CORRECTION CRITIQUE : Conversion en String avant replace
+    
+    // CORRECTION CRITIQUE : Conversion en String avant replace pour éviter le crash sur les nombres
     const safeId = String(dish.id).replace(/'/g, "\\'");
 
     const div = document.createElement('div');
@@ -321,7 +322,7 @@ function renderMenus() {
 
 // --- Config Update ---
 function updateConfigUI() {
-  // Les chips sont regénérés par generateConfigChips()
+  // Les chips sont regénérés par generateConfigChips() lors du switch d'onglet
   
   // Durées
   const md = menuConfig.mealDuration || { lunch: 1, dinner: 1 };
@@ -433,6 +434,16 @@ window.regenerateMenu = function(menuId, weekNumber) {
   }
 };
 
+window.toggleMenuContent = function(id) {
+  const content = document.getElementById(id);
+  const icon = document.getElementById('icon-' + id);
+  if (content && icon) {
+    const isOpen = content.classList.contains('open');
+    if (isOpen) { content.classList.remove('open'); icon.textContent = 'expand_more'; }
+    else { content.classList.add('open'); icon.textContent = 'expand_less'; }
+  }
+};
+
 window.toggleFilter = function(filter) {
   if (activeFilters.includes(filter)) {
     activeFilters = activeFilters.filter(f => f !== filter);
@@ -498,16 +509,32 @@ function initFirebaseAndListen() {
       const d = s.val();
       const def = { sportDays: [], activeSeasons: seasons, mealDuration: { lunch: 1, dinner: 1 } };
       menuConfig = d ? { ...def, ...d } : def;
-      // Mise à jour si l'onglet config est actif
+      // Rafraichir l'UI seulement si on est sur l'onglet config (évite les bugs visuels)
       if(document.getElementById('configTab').classList.contains('active')) {
-        generateConfigChips();
-        updateConfigUI();
+        updateConfigUI(); // Ceci déclenchera aussi generateConfigChips via switchToTab si besoin, mais on peut le laisser ici
       }
     });
   }
 }
 
 // Helpers
+function getDishIcon(name) {
+  if (!name) return 'restaurant_menu';
+  const n = name.toLowerCase();
+  if (n.includes('burger') || n.includes('sandwich') || n.includes('bagel')) return 'lunch_dining';
+  if (n.includes('pizza')) return 'local_pizza';
+  if (n.includes('salade') || n.includes('legume') || n.includes('tomate')) return 'eco';
+  if (n.includes('pate') || n.includes('spaghetti') || n.includes('lasagne')) return 'dinner_dining';
+  if (n.includes('soupe') || n.includes('veloute')) return 'soup_kitchen';
+  if (n.includes('gateau') || n.includes('dessert') || n.includes('tarte')) return 'cake';
+  if (n.includes('cafe')) return 'coffee';
+  if (n.includes('riz') || n.includes('curry') || n.includes('paella')) return 'rice_bowl';
+  if (n.includes('poisson') || n.includes('saumon') || n.includes('crevette')) return 'set_meal';
+  if (n.includes('oeuf') || n.includes('omelette')) return 'egg_alt';
+  if (n.includes('gratin') || n.includes('quiche')) return 'local_fire_department';
+  if (n.includes('poulet') || n.includes('viande') || n.includes('steak')) return 'restaurant';
+  return 'restaurant_menu'; 
+}
 function getWeekNumber(d) {
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
@@ -517,7 +544,8 @@ function getWeekNumber(d) {
 function getWeekDates(wn) {
   const y = new Date().getFullYear();
   const d = new Date(y, 0, 1 + (wn - 1) * 7);
-  const diff = d.getDate() - d.getDay() + (d.getDay() == 0 ? -6:1);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day == 0 ? -6:1);
   const monday = new Date(d.setDate(diff));
   const sunday = new Date(new Date(monday).setDate(monday.getDate() + 6));
   const fmt = (dt) => dt.getDate().toString().padStart(2,'0') + '/' + (dt.getMonth()+1).toString().padStart(2,'0');
@@ -530,13 +558,6 @@ function getCurrentSeason() {
   if (m >= 8 && m <= 10) return 'Automne';
   return 'Hiver';
 }
-function getRecentlyUsedDishes() {
-  const cw = getWeekNumber(new Date());
-  const rm = menus.filter(m => m && m.weekNumber && cw - m.weekNumber <= 3 && cw - m.weekNumber >= 0);
-  const used = new Set();
-  rm.forEach(m => m.schedule.forEach(d => { if(d.lunch) used.add(d.lunch.id); if(d.dinner) used.add(d.dinner.id); }));
-  return used;
-}
 
 // Navigation Groupe
 window.showGroupTypeSelection = function() {
@@ -544,7 +565,8 @@ window.showGroupTypeSelection = function() {
   document.getElementById('joinGroupForm').classList.add('hidden');
 };
 window.showCreateGroup = function() {
-  groupId = 'group_' + Date.now();
+  const newGroupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  groupId = newGroupId;
   localStorage.setItem('groupId', groupId);
   window.showMainApp();
   initFirebaseAndListen();
@@ -561,16 +583,18 @@ window.joinGroup = function() {
 window.showMainApp = function() {
   document.getElementById('groupSetup').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('syncIndicator').classList.remove('hidden');
   document.getElementById('tabBar').classList.remove('hidden');
-  document.getElementById('currentGroupIdDisplay').textContent = groupId;
+  const el = document.getElementById('currentGroupIdDisplay');
+  if(el) el.textContent = groupId;
   window.switchToTab('dishes');
+};
+window.leaveGroup = function() {
+  if(confirm('Quitter ?')) { localStorage.removeItem('groupId'); location.reload(); }
 };
 window.copyGroupId = function() {
   if(navigator.clipboard) navigator.clipboard.writeText(groupId).then(() => window.showToast('📋 Copié !'));
   else prompt('ID :', groupId);
-};
-window.leaveGroup = function() {
-  if(confirm('Quitter ?')) { localStorage.removeItem('groupId'); location.reload(); }
 };
 
 // PWA
@@ -597,8 +621,8 @@ window.onload = function() {
       
       const exists = dishes.some(d => d.name.toLowerCase() === val);
       fb.innerHTML = exists ? 
-        '<span class="material-icons" style="font-size:16px">warning</span> Déjà existant' : 
-        '<span class="material-icons" style="font-size:16px">check_circle</span> Nouveau';
+        '<span class="material-icons" style="font-size:16px; vertical-align:text-bottom;">warning</span> Déjà existant' : 
+        '<span class="material-icons" style="font-size:16px; vertical-align:text-bottom;">check_circle</span> Nouveau';
       fb.className = exists ? 'input-feedback duplicate' : 'input-feedback ok';
 
       const matches = dishes.filter(d => d.name.toLowerCase().includes(val) && d.name.toLowerCase() !== val).slice(0,5);
