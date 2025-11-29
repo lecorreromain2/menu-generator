@@ -133,8 +133,10 @@ function installApp() {
   }
 }
 
+// Sauvegarde le menu du jour pour le Widget Android
 function updateWidgetData() {
   if (!menus.length) return;
+  
   const currentWeek = getWeekNumber(new Date());
   const currentMenu = menus.find(m => m.weekNumber === currentWeek);
   
@@ -384,7 +386,6 @@ function updateConfigUI() {
 // 7. GESTION DES RECETTES (CRUD & FILTRES)
 // ==========================================
 
-// --- NOUVELLE LOGIQUE ROBUSTE POUR LES SAISONS ---
 function updateSeasonChipsUI() {
   const chips = document.querySelectorAll('#seasonsChips .chip');
   chips.forEach(chip => {
@@ -404,7 +405,7 @@ function toggleSeasonChip(season) {
   } else {
     newDishSeasons.push(season);
   }
-  updateSeasonChipsUI(); 
+  updateSeasonChipsUI();
 }
 
 function initSeasonChips() {
@@ -544,7 +545,7 @@ function openAddDishModal() {
   document.getElementById('dishName').value = '';
   
   newDishSeasons = [];
-  updateSeasonChipsUI(); // Init UI
+  updateSeasonChipsUI();
   
   document.getElementById('sportDay').checked = false;
   document.getElementById('vegetarian').checked = false;
@@ -566,7 +567,7 @@ function openAddDishModal() {
   openModal('addDishModal');
 }
 
-// CORRECTION IMPORTANTE : prend un ID, pas un objet
+// CORRECTION : Prend un ID
 function openEditDishModal(dishId) {
   const dish = dishes.find(d => d.id == dishId);
   if (!dish) return;
@@ -577,7 +578,7 @@ function openEditDishModal(dishId) {
   document.getElementById('dishName').value = dish.name;
   
   newDishSeasons = [...(dish.seasons || [])]; 
-  updateSeasonChipsUI(); // Init UI
+  updateSeasonChipsUI(); 
   
   document.getElementById('sportDay').checked = dish.sportDay || false;
   document.getElementById('vegetarian').checked = dish.vegetarian || false;
@@ -798,52 +799,6 @@ function updateMenusTab() {
   }
 }
 
-function updateConfigDisplay() {
-  const sportDaysContainer = document.getElementById('sportDaysChipsDisplay');
-  const sportDaysList = menuConfig.sportDays || [];
-  
-  if (sportDaysContainer && sportDaysContainer.children.length === 0) {
-    daysOfWeek.forEach(day => {
-      const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.textContent = day;
-      chip.id = 'sport_display_' + day;
-      chip.onclick = () => toggleSportDay(day);
-      if (sportDaysList.includes(day)) chip.classList.add('selected');
-      sportDaysContainer.appendChild(chip);
-    });
-  } else if (sportDaysContainer) {
-    daysOfWeek.forEach(day => {
-        const chipDisplay = document.getElementById('sport_display_' + day);
-        if (chipDisplay) chipDisplay.classList.toggle('selected', sportDaysList.includes(day));
-    });
-  }
-
-  const seasonDaysContainer = document.getElementById('seasonFilterChipsDisplay');
-  const activeSeasonsList = menuConfig.activeSeasons || [];
-  
-  if (seasonDaysContainer && seasonDaysContainer.children.length === 0) {
-    seasons.forEach(season => {
-      const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.textContent = season;
-      chip.id = 'season_display_' + season; 
-      chip.onclick = () => toggleConfigSeason(season); 
-      if (activeSeasonsList.includes(season)) chip.classList.add('selected');
-      seasonDaysContainer.appendChild(chip);
-    });
-  } else if (seasonDaysContainer) {
-    seasons.forEach(season => {
-        const chipDisplay = document.getElementById('season_display_' + season);
-        if (chipDisplay) chipDisplay.classList.toggle('selected', activeSeasonsList.includes(season));
-    });
-  }
-  
-  const groupIdDisplay = document.getElementById('currentGroupIdDisplay');
-  if (groupIdDisplay) groupIdDisplay.textContent = groupId;
-  updateConfigUI(); 
-}
-
 function listenToFirebase() {
   if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
     setTimeout(listenToFirebase, 500);
@@ -894,7 +849,7 @@ function listenToFirebase() {
     }, {})).sort((a, b) => b.weekNumber - a.weekNumber);
     
     renderMenus();
-    updateWidgetData(); // Mise à jour widget
+    updateWidgetData(); 
   });
 
   configRef.on('value', snapshot => {
@@ -909,30 +864,18 @@ function listenToFirebase() {
   });
 }
 
-function initSeasonChips() {
-  const container = document.getElementById('seasonsChips');
-  if (!container) return;
-  container.innerHTML = ''; // Nettoyage pour éviter doublons
-  seasons.forEach(season => {
-    const chip = document.createElement('div');
-    chip.className = 'chip';
-    chip.textContent = season;
-    chip.onclick = () => toggleSeasonChip(season);
-    container.appendChild(chip);
-  });
-}
+function setupTooltip() {
+  const syncIcon = document.getElementById('syncIcon');
+  if (!syncIcon) return;
 
-function initSportDaysChips() {
-  const container = document.getElementById('sportDaysChips');
-  if (!container) return;
-  container.innerHTML = '';
-  daysOfWeek.forEach(day => {
-    const chip = document.createElement('div');
-    chip.className = 'chip';
-    chip.textContent = day;
-    chip.id = 'sport_' + day;
-    chip.onclick = () => toggleSportDay(day);
-    container.appendChild(chip);
+  let touchTimer;
+  syncIcon.addEventListener('touchstart', (e) => {
+    touchTimer = setTimeout(() => {
+      showToast(`Groupe : ${groupId}`, 2000);
+    }, 500);
+  });
+  syncIcon.addEventListener('touchend', () => {
+    clearTimeout(touchTimer);
   });
 }
 
@@ -965,21 +908,6 @@ function updateSyncIcon(syncing, error = false) {
     indicator.classList.remove('hidden', 'error');
     icon.textContent = 'check_circle';
   }
-}
-
-function setupTooltip() {
-  const syncIcon = document.getElementById('syncIcon');
-  if (!syncIcon) return;
-
-  let touchTimer;
-  syncIcon.addEventListener('touchstart', (e) => {
-    touchTimer = setTimeout(() => {
-      showToast(`Groupe : ${groupId}`, 2000);
-    }, 500);
-  });
-  syncIcon.addEventListener('touchend', () => {
-    clearTimeout(touchTimer);
-  });
 }
 
 // EVENTS LISTENER INPUT
