@@ -11,7 +11,7 @@ const firebaseConfig = {
   appId: "1:760559115603:web:30955099b520f65c3495a6"
 };
 
-// Initialisation immédiate
+// Initialisation sécurisée
 try {
   firebase.initializeApp(firebaseConfig);
 } catch (e) {
@@ -44,7 +44,7 @@ const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi',
 // ==========================================
 
 window.getDishIcon = function(name) {
-  if (!name) return 'restaurant_menu';
+  if (!name || typeof name !== 'string') return 'restaurant_menu';
   const n = name.toLowerCase();
   if (n.includes('burger') || n.includes('sandwich') || n.includes('bagel')) return 'lunch_dining';
   if (n.includes('pizza')) return 'local_pizza';
@@ -164,7 +164,6 @@ window.openAddDishModal = function() {
   document.getElementById('mealLunch').checked = true;
   document.getElementById('mealDinner').checked = true;
   
-  // Gestion Cible Enfant
   const targetSection = document.getElementById('targetSection');
   if (targetSection) {
     if (menuConfig.childMode) {
@@ -266,7 +265,7 @@ window.deleteDish = function(id) {
   }
 };
 
-// FONCTION DE SÉLECTION INTELLIGENTE (PARENTS/ENFANT)
+// Sélection Intelligente
 function pickDish(available, usedMap, excludeId = null, mealTypeFilter = null, targetFilter = null) {
   let candidates = available.filter(d => 
     (!excludeId || d.id !== excludeId) && 
@@ -394,7 +393,6 @@ window.saveChildName = function() {
   if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 };
 
-// --- Config Items ---
 window.toggleConfigSeason = function(season) {
   let list = menuConfig.activeSeasons || [];
   if (list.includes(season)) list = list.filter(s => s !== season); else list.push(season);
@@ -474,7 +472,6 @@ window.renderDishes = function() {
     if (activeFilters.includes('winter') && !d.seasons.includes('Hiver')) m = false;
     return m;
   });
-
   filtered.sort((a, b) => a.name.localeCompare(b.name));
   
   document.getElementById('dishCount').textContent = filtered.length;
@@ -485,56 +482,61 @@ window.renderDishes = function() {
   empty?.classList.add('hidden'); list?.classList.remove('hidden');
 
   filtered.forEach(dish => {
-    const isLunch = !dish.mealType || dish.mealType.includes('lunch');
-    const isDinner = !dish.mealType || dish.mealType.includes('dinner');
-    let mealTags = '';
-    if (isLunch && isDinner) mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
-    else if (isLunch) mealTags = '<span class="tag tag-lunch">☀️ Midi</span>';
-    else if (isDinner) mealTags = '<span class="tag tag-dinner">🌙 Soir</span>';
-    
-    // Tag Cible
-    let targetTag = '';
-    const targets = dish.target || ['parents', 'child'];
-    if (targets.length === 1) {
-       if(targets.includes('child')) targetTag = `<span class="tag tag-target-child">👶 ${menuConfig.childName||'Enfant'}</span>`;
-       else targetTag = '<span class="tag tag-target-parents">👫 Parents</span>';
-    }
+    // SECURITE BOUCLE : Try-Catch pour éviter qu'une seule recette plante tout
+    try {
+      const isLunch = !dish.mealType || dish.mealType.includes('lunch');
+      const isDinner = !dish.mealType || dish.mealType.includes('dinner');
+      let mealTags = '';
+      if (isLunch && isDinner) mealTags = '<span class="tag tag-mixed">Midi & Soir</span>';
+      else if (isLunch) mealTags = '<span class="tag tag-lunch">☀️ Midi</span>';
+      else if (isDinner) mealTags = '<span class="tag tag-dinner">🌙 Soir</span>';
+      
+      let targetTag = '';
+      const targets = dish.target || ['parents', 'child'];
+      if (targets.length === 1) {
+         if(targets.includes('child')) targetTag = `<span class="tag tag-target-child">👶 ${menuConfig.childName||'Enfant'}</span>`;
+         else targetTag = '<span class="tag tag-target-parents">👫 Parents</span>';
+      }
 
-    const iconName = window.getDishIcon(dish.name);
-    const safeId = String(dish.id).replace(/'/g, "\\'");
+      const iconName = window.getDishIcon(dish.name);
+      // SECURITE ID
+      const safeId = String(dish.id).replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
-    const div = document.createElement('div');
-    div.className = 'dish-card-wrapper';
-    div.innerHTML = `
-      <div class="dish-card-content">
-        <div class="dish-icon-area"><span class="material-icons">${iconName}</span></div>
-        <div class="dish-info">
-          <h3>${dish.name}</h3>
-          <div class="tags">
-              ${targetTag}
-              ${mealTags}
-              ${(dish.seasons||[]).map(s => {
-                  let c='tag-season';
-                  if(s==='Printemps')c='tag-spring';
-                  if(s==='Été')c='tag-summer';
-                  if(s==='Automne')c='tag-autumn';
-                  if(s==='Hiver')c='tag-winter';
-                  return `<span class="tag ${c}">${s}</span>`
-              }).join('')}
-              ${dish.sportDay ? '<span class="tag tag-sport">Sport</span>' : ''}
+      const div = document.createElement('div');
+      div.className = 'dish-card-wrapper';
+      div.innerHTML = `
+        <div class="dish-card-content">
+          <div class="dish-icon-area"><span class="material-icons">${iconName}</span></div>
+          <div class="dish-info">
+            <h3>${dish.name}</h3>
+            <div class="tags">
+                ${targetTag}
+                ${mealTags}
+                ${(dish.seasons||[]).map(s => {
+                    let c='tag-season';
+                    if(s==='Printemps')c='tag-spring';
+                    if(s==='Été')c='tag-summer';
+                    if(s==='Automne')c='tag-autumn';
+                    if(s==='Hiver')c='tag-winter';
+                    return `<span class="tag ${c}">${s}</span>`
+                }).join('')}
+                ${dish.sportDay ? '<span class="tag tag-sport">Sport</span>' : ''}
+            </div>
           </div>
+          <div class="swipe-hint"><span class="material-icons">chevron_left</span></div>
         </div>
-        <div class="swipe-hint"><span class="material-icons">chevron_left</span></div>
-      </div>
-      <div class="dish-actions-swipe">
-        <button class="action-btn edit" onclick="openEditDishModal('${safeId}')">
-            <span class="material-icons">edit</span>
-        </button>
-        <button class="action-btn delete" onclick="deleteDish('${safeId}')">
-            <span class="material-icons">delete</span>
-        </button>
-      </div>`;
-    container.appendChild(div);
+        <div class="dish-actions-swipe">
+          <button class="action-btn edit" onclick="openEditDishModal('${safeId}')">
+              <span class="material-icons">edit</span>
+          </button>
+          <button class="action-btn delete" onclick="deleteDish('${safeId}')">
+              <span class="material-icons">delete</span>
+          </button>
+        </div>`;
+      container.appendChild(div);
+    } catch (err) {
+      console.error("Erreur affichage recette:", dish, err);
+    }
   });
 };
 
@@ -547,60 +549,62 @@ window.renderMenus = function() {
   document.getElementById('noMenus')?.classList.add('hidden');
 
   menus.forEach((menu, index) => {
-    const div = document.createElement('div');
-    div.className = 'card';
-    let scheduleHTML = '';
-    
-    menu.schedule.forEach(day => {
-      let lunchDisplay = `<div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>`;
-      if (day.lunchChild) {
-        lunchDisplay = `<div class="meal-split"><div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div><div class="child-meal"><span class="material-icons">child_care</span> ${day.lunchChild.name}</div></div>`;
-      }
-      let dinnerDisplay = `<div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>`;
-      if (day.dinnerChild) {
-        dinnerDisplay = `<div class="meal-split"><div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div><div class="child-meal"><span class="material-icons">child_care</span> ${day.dinnerChild.name}</div></div>`;
-      }
+    try {
+      const div = document.createElement('div');
+      div.className = 'card';
+      let scheduleHTML = '';
+      
+      menu.schedule.forEach(day => {
+        let lunchDisplay = `<div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>`;
+        if (day.lunchChild) {
+          lunchDisplay = `<div class="meal-split"><div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div><div class="child-meal"><span class="material-icons">child_care</span> ${day.lunchChild.name}</div></div>`;
+        }
+        let dinnerDisplay = `<div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>`;
+        if (day.dinnerChild) {
+          dinnerDisplay = `<div class="meal-split"><div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div><div class="child-meal"><span class="material-icons">child_care</span> ${day.dinnerChild.name}</div></div>`;
+        }
 
-      scheduleHTML += `
-        <div class="day-card">
-          <div class="day-header-new">
-            <div class="day-name-large">${day.day}</div>
-            ${day.isSportDay ? '<span class="sport-tag">🏋️ JOUR DE SPORT</span>' : ''}
-          </div>
-          <div class="meal-grid">
-            <div class="meal-column meal-lunch">
-              <div class="meal-label">Déjeuner</div>
-              ${lunchDisplay}
+        scheduleHTML += `
+          <div class="day-card">
+            <div class="day-header-new">
+              <div class="day-name-large">${day.day}</div>
+              ${day.isSportDay ? '<span class="sport-tag">🏋️ JOUR DE SPORT</span>' : ''}
             </div>
-            <div class="meal-separator"></div>
-            <div class="meal-column meal-dinner">
-              <div class="meal-label">Dîner</div>
-              ${dinnerDisplay}
+            <div class="meal-grid">
+              <div class="meal-column meal-lunch">
+                <div class="meal-label">Déjeuner</div>
+                ${lunchDisplay}
+              </div>
+              <div class="meal-separator"></div>
+              <div class="meal-column meal-dinner">
+                <div class="meal-label">Dîner</div>
+                ${dinnerDisplay}
+              </div>
             </div>
+          </div>`;
+      });
+
+      const isOpen = index === 0 ? 'open' : '';
+      const iconName = index === 0 ? 'expand_less' : 'expand_more';
+
+      div.innerHTML = `
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap: 12px;">
+            <span class="material-icons">calendar_today</span>
+            Semaine ${menu.weekNumber} (${menu.startDate} → ${menu.endDate})
           </div>
-        </div>`;
-    });
-
-    const isOpen = index === 0 ? 'open' : '';
-    const iconName = index === 0 ? 'expand_less' : 'expand_more';
-
-    div.innerHTML = `
-      <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap: 12px;">
-          <span class="material-icons">calendar_today</span>
-          Semaine ${menu.weekNumber} (${menu.startDate} → ${menu.endDate})
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="icon-btn" onclick="window.regenerateMenu(${menu.id}, ${menu.weekNumber})">
+              <span class="material-icons">refresh</span>
+            </button>
+            <button class="icon-btn" onclick="window.toggleMenuContent('content-${menu.id}')">
+              <span id="icon-content-${menu.id}" class="material-icons">${iconName}</span>
+            </button>
+          </div>
         </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button class="icon-btn" onclick="window.regenerateMenu(${menu.id}, ${menu.weekNumber})">
-            <span class="material-icons">refresh</span>
-          </button>
-          <button class="icon-btn" onclick="window.toggleMenuContent('content-${menu.id}')">
-            <span id="icon-content-${menu.id}" class="material-icons">${iconName}</span>
-          </button>
-        </div>
-      </div>
-      <div id="content-${menu.id}" class="menu-collapse ${isOpen}">${scheduleHTML}</div>`;
-    container.appendChild(div);
+        <div id="content-${menu.id}" class="menu-collapse ${isOpen}">${scheduleHTML}</div>`;
+      container.appendChild(div);
+    } catch(e) { console.error(e); }
   });
 };
 
@@ -662,7 +666,6 @@ window.updateConfigUI = function() {
   document.getElementById('lunch' + md.lunch + 'Display')?.classList.add('selected');
   document.getElementById('dinner' + md.dinner + 'Display')?.classList.add('selected');
   
-  // Mise à jour UI Enfant
   const childToggle = document.getElementById('childModeToggle');
   const childInput = document.getElementById('childNameInput');
   const childContent = document.getElementById('childConfigContent');
@@ -714,7 +717,6 @@ function initFirebaseAndListen() {
       const d = s.val();
       const def = { sportDays: [], activeSeasons: seasons, mealDuration: { lunch: 1, dinner: 1 }, childMode: false, childName: 'Enfant' };
       menuConfig = d ? { ...def, ...d } : def;
-      // Update si on est sur l'onglet config
       if(!document.getElementById('configTab').classList.contains('hidden')) {
          window.generateConfigChips();
          window.updateConfigUI();
@@ -740,10 +742,9 @@ window.installApp = function() {
 };
 
 window.onload = function() {
-  console.log('App Started vFINAL');
+  console.log('App Started vFINAL-SAFE');
   setupPWA();
   
-  // Input Listener Suggestions
   const input = document.getElementById('dishName');
   if(input) {
     input.addEventListener('input', () => {
