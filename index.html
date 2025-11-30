@@ -4,21 +4,24 @@
   <meta charset="UTF-8"> 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#00A381">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="mobile-web-app-title" content="Menu Generator">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Menu Generator">
   <meta name="description" content="Générateur de menus hebdomadaires avec synchronisation en temps réel">
   <title>Générateur de Menus</title>
   
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="icon" type="image/png" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+  
+  <link rel="stylesheet" href="./styles.css?v=FINAL">
 </head>
 <body>
   <div class="container">
+    
     <div id="installPrompt" class="install-prompt hidden">
       <div class="install-text">
         <div class="install-title">📱 Installer l'application</div>
@@ -42,7 +45,7 @@
       </div>
     </div>
 
-   <div id="groupSetup" class="card group-setup-card">
+    <div id="groupSetup" class="card group-setup-card">
       <div class="card-title justify-center">
         <span class="material-icons" style="font-size: 28px;">group_add</span>
         Configuration du groupe
@@ -69,9 +72,7 @@
         <div class="info-text text-center" style="margin-bottom: 24px;">
           Entrez l'ID du groupe que vous avez reçu
         </div>
-        
         <input type="text" id="groupIdInput" class="input text-center" placeholder="Collez l'ID ici (ex: group_...)" style="margin-bottom: 24px;">
-        
         <div class="setup-buttons row">
           <button class="btn btn-text" onclick="showGroupTypeSelection()">Retour</button>
           <button class="btn btn-filled" onclick="joinGroup()" style="padding-left: 32px; padding-right: 32px;">
@@ -106,6 +107,7 @@
           <p>Aucune recette pour le moment</p>
           <p style="font-size: 12px; color: var(--md-on-surface-variant);">Ajoutez des recettes ou modifiez les filtres.</p>
         </div>
+        
         <button id="fabAdd" class="fab" onclick="openAddDishModal()">
           <span class="material-icons">add</span>
         </button>
@@ -120,6 +122,7 @@
           <p>Aucun menu généré</p>
           <p style="font-size: 12px; color: var(--md-on-surface-variant);">Générez votre premier menu pour commencer</p>
         </div>
+        
         <button id="fabMenu" class="fab" onclick="generateMenu()">
           <span class="material-icons">refresh</span>
         </button>
@@ -156,6 +159,28 @@
 
         <details class="config-details">
           <summary class="config-summary">
+            <span class="material-icons">child_care</span>
+            Mode Enfant
+            <span class="material-icons arrow">expand_more</span>
+          </summary>
+          <div class="config-content">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+              <span style="font-size:14px; font-weight:500;">Activer les repas séparés</span>
+              <label class="switch">
+                <input type="checkbox" id="childModeToggle" onchange="toggleChildMode()">
+                <span class="slider round"></span>
+              </label>
+            </div>
+            
+            <div id="childConfigContent" class="hidden">
+              <label class="label">Prénom de l'enfant</label>
+              <input type="text" id="childNameInput" class="input" placeholder="Ex: Alix" onchange="saveChildName()">
+            </div>
+          </div>
+        </details>
+
+        <details class="config-details">
+          <summary class="config-summary">
             <span class="material-icons">group</span>
             Gestion du groupe
             <span class="material-icons arrow">expand_more</span>
@@ -167,11 +192,15 @@
             <div class="info-text group-id-description">
               Partagez cet ID pour inviter des membres.
             </div>
-
-            <button class="btn btn-error" onclick="leaveGroup()" style="width: 100%;">
-              <span class="material-icons">exit_to_app</span>
-              Quitter le groupe
-            </button>
+            
+            <div style="display: flex; gap: 12px;">
+               <button class="btn btn-outlined" onclick="copyGroupId()" style="flex:1;">
+                 <span class="material-icons">content_copy</span> Copier
+               </button>
+               <button class="btn btn-error" onclick="leaveGroup()" style="flex:1;">
+                 <span class="material-icons">logout</span> Quitter
+               </button>
+            </div>
           </div>
         </details>
 
@@ -191,6 +220,20 @@
       <div id="dishSuggestions" class="suggestions-list"></div>
       <div id="dishNameFeedback" class="input-feedback"></div>
       
+      <div id="targetSection" class="hidden">
+        <label class="label">Pour qui ?</label>
+        <div class="category-container" style="flex-direction: row; gap: 16px; margin-bottom: 16px;">
+          <label class="plain-checkbox">
+            <input type="checkbox" id="targetParents" checked>
+            <span>Parents</span>
+          </label>
+          <label class="plain-checkbox">
+            <input type="checkbox" id="targetChild" checked>
+            <span id="targetChildLabel">Enfant</span>
+          </label>
+        </div>
+      </div>
+
       <label class="label">Type de repas</label>
       <div class="category-container" style="flex-direction: row; gap: 16px; margin-bottom: 16px;">
         <label class="plain-checkbox">
@@ -232,7 +275,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
-  <script src="./script.js?v=8.0"></script>
+  <script src="./script.js?v=FINAL"></script>
 
   <div id="tabBar" class="tab-bar hidden">
     <button class="tab-btn active" data-tab="dishes" onclick="switchToTab('dishes')">
