@@ -2,6 +2,7 @@ const CACHE_NAME = 'menu-generator-v2';
 const urlsToCache = [
   './',
   './index.html',
+  './widget.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
