@@ -164,6 +164,7 @@ window.openAddDishModal = function() {
   document.getElementById('mealLunch').checked = true;
   document.getElementById('mealDinner').checked = true;
   
+  // Gestion Cible Enfant
   const targetSection = document.getElementById('targetSection');
   if (targetSection) {
     if (menuConfig.childMode) {
@@ -265,7 +266,6 @@ window.deleteDish = function(id) {
   }
 };
 
-// FONCTION DE SÉLECTION INTELLIGENTE
 function pickDish(available, usedMap, excludeId = null, mealTypeFilter = null, targetFilter = null) {
   let candidates = available.filter(d => 
     (!excludeId || d.id !== excludeId) && 
@@ -317,7 +317,6 @@ window.generateMenu = function(targetWeekNumber = null) {
       lunch = pickDish(availableDishes, usedInMenu, null, 'lunch', 'parents');
     }
 
-    // Gestion Enfant
     if (menuConfig.childMode && lunch) {
       const targets = lunch.target || ['parents', 'child'];
       if (!targets.includes('child')) {
@@ -326,10 +325,6 @@ window.generateMenu = function(targetWeekNumber = null) {
         } else {
           lunchChild = pickDish(availableDishes, usedInMenu, lunch.id, 'lunch', 'child');
         }
-      } else {
-         // Même plat : on le laisse à null dans l'objet de données pour économiser
-         // Mais l'affichage le gérera
-         lunchChild = null;
       }
     }
 
@@ -351,8 +346,6 @@ window.generateMenu = function(targetWeekNumber = null) {
         } else {
           dinnerChild = pickDish(availableDishes, usedInMenu, dinner.id, 'dinner', 'child');
         }
-      } else {
-         dinnerChild = null;
       }
     }
 
@@ -477,6 +470,13 @@ window.renderDishes = function() {
     if (activeFilters.includes('vege') && !d.vegetarian) m = false;
     if (activeFilters.includes('summer') && !d.seasons.includes('Été')) m = false;
     if (activeFilters.includes('winter') && !d.seasons.includes('Hiver')) m = false;
+    
+    // Filtre "Enfant" (Nouveau)
+    if (activeFilters.includes('child')) {
+       const targets = d.target || ['parents', 'child'];
+       if (!targets.includes('child')) m = false;
+    }
+    
     return m;
   });
   filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -558,31 +558,40 @@ window.renderMenus = function() {
       let scheduleHTML = '';
       
       menu.schedule.forEach(day => {
-        // Déjeuner
         let lunchName = day.lunch ? day.lunch.name : '-';
         let lunchDisplay = `<div class="meal-name">${lunchName}</div>`;
         
-        // Si Mode Enfant activé (Config Globale) OU s'il y a un plat spécifique différent
-        if (menuConfig.childMode || day.lunchChild) {
-           // Nom du plat enfant (Spécifique ou identique au parent par défaut)
+        // Affichage conditionnel
+        if (menuConfig.childMode) {
            let childName = day.lunchChild ? day.lunchChild.name : lunchName;
            lunchDisplay = `
             <div class="meal-split">
                <div class="meal-name">${lunchName}</div>
                <div class="child-meal"><span class="material-icons">child_care</span> ${childName}</div>
             </div>`;
+        } else if (day.lunchChild) {
+           lunchDisplay = `
+            <div class="meal-split">
+               <div class="meal-name">${lunchName}</div>
+               <div class="child-meal"><span class="material-icons">child_care</span> ${day.lunchChild.name}</div>
+            </div>`;
         }
 
-        // Dîner
         let dinnerName = day.dinner ? day.dinner.name : '-';
         let dinnerDisplay = `<div class="meal-name">${dinnerName}</div>`;
 
-        if (menuConfig.childMode || day.dinnerChild) {
+        if (menuConfig.childMode) {
            let childName = day.dinnerChild ? day.dinnerChild.name : dinnerName;
            dinnerDisplay = `
             <div class="meal-split">
                <div class="meal-name">${dinnerName}</div>
                <div class="child-meal"><span class="material-icons">child_care</span> ${childName}</div>
+            </div>`;
+        } else if (day.dinnerChild) {
+           dinnerDisplay = `
+            <div class="meal-split">
+               <div class="meal-name">${dinnerName}</div>
+               <div class="child-meal"><span class="material-icons">child_care</span> ${day.dinnerChild.name}</div>
             </div>`;
         }
 
@@ -764,7 +773,7 @@ window.installApp = function() {
 };
 
 window.onload = function() {
-  console.log('App Started vFINAL-CHILD-FIX');
+  console.log('App Started vFINAL-SAFE');
   setupPWA();
   
   const input = document.getElementById('dishName');
