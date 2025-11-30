@@ -11,10 +11,11 @@ const firebaseConfig = {
   appId: "1:760559115603:web:30955099b520f65c3495a6"
 };
 
+// Initialisation sécurisée
 try {
   firebase.initializeApp(firebaseConfig);
 } catch (e) {
-  console.error("Erreur init Firebase (peut-être offline):", e);
+  console.error("Erreur init Firebase:", e);
 }
 let database = typeof firebase !== 'undefined' ? firebase.database() : null;
 
@@ -22,10 +23,9 @@ let database = typeof firebase !== 'undefined' ? firebase.database() : null;
 // 2. VARIABLES GLOBALES
 // ==========================================
 let groupId = localStorage.getItem('groupId') || '';
-
-// Données en mémoire
 let dishes = [];
 let menus = [];
+// Valeurs par défaut vitales pour éviter les crashs
 let menuConfig = { 
   sportDays: [], 
   activeSeasons: ['Printemps', 'Été', 'Automne', 'Hiver'], 
@@ -33,123 +33,15 @@ let menuConfig = {
   childMode: false,
   childName: 'Enfant'
 };
-
-// UI State
 let newDishSeasons = [];
 let editingDishId = null;
 let activeFilters = [];
-
-// File d'attente hors ligne
-let offlineQueue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
 
 const seasons = ['Printemps', 'Été', 'Automne', 'Hiver'];
 const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 // ==========================================
-// 3. GESTION HORS LIGNE & SYNC
-// ==========================================
-
-// Sauvegarde les données locales pour le prochain démarrage
-function saveLocalData(key, data) {
-  localStorage.setItem(`local_${key}_${groupId}`, JSON.stringify(data));
-}
-
-// Charge les données locales au démarrage
-function loadLocalData() {
-  if (!groupId) return;
-  
-  const localDishes = localStorage.getItem(`local_dishes_${groupId}`);
-  const localMenus = localStorage.getItem(`local_menus_${groupId}`);
-  const localConfig = localStorage.getItem(`local_config_${groupId}`);
-  
-  if (localDishes) dishes = JSON.parse(localDishes);
-  if (localMenus) menus = JSON.parse(localMenus);
-  if (localConfig) menuConfig = JSON.parse(localConfig);
-  
-  // Affiche immédiatement les données locales
-  window.renderDishes();
-  window.renderMenus();
-  window.updateConfigUI();
-  updateWidgetData();
-  console.log("📂 Données locales chargées");
-}
-
-// Ajoute une action à la file d'attente
-function addToQueue(action, path, data) {
-  const task = { id: Date.now(), action, path, data, groupId };
-  offlineQueue.push(task);
-  localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
-  window.showToast('💾 Sauvegardé hors ligne (sera synchronisé)');
-  window.updateSyncIcon(false, true); // Icône "En attente"
-}
-
-// Traite la file d'attente quand la connexion revient
-function processQueue() {
-  if (!offlineQueue.length || !navigator.onLine || !database) return;
-  
-  console.log(`🔄 Synchronisation de ${offlineQueue.length} changements...`);
-  window.showToast('🔄 Synchronisation...');
-  window.updateSyncIcon(true);
-
-  // On traite les tâches une par une
-  const tasks = [...offlineQueue];
-  offlineQueue = []; // On vide temporairement
-  localStorage.setItem('offlineQueue', '[]');
-
-  tasks.forEach(task => {
-    // Vérification de sécurité groupe
-    if (task.groupId !== groupId) return;
-
-    const ref = database.ref(task.path);
-    if (task.action === 'set') {
-      ref.set(task.data).catch(e => {
-        console.error("Erreur sync:", e);
-        // Si échec, on remet dans la file ? (Simplification: on log juste ici)
-      });
-    } else if (task.action === 'remove') {
-      ref.remove().catch(e => console.error("Erreur sync:", e));
-    }
-  });
-  
-  window.showToast('✅ Synchronisation terminée');
-  window.updateSyncIcon(false);
-}
-
-// Écouteurs réseau
-window.addEventListener('online', () => {
-  console.log("🌐 Connexion rétablie");
-  processQueue();
-});
-window.addEventListener('offline', () => {
-  console.log("🌐 Mode Hors Ligne");
-  window.showToast('Mode Hors Ligne actif');
-  window.updateSyncIcon(false, true);
-});
-
-// WRAPPER D'ÉCRITURE (Cœur du système)
-// Remplace les appels directs à database.ref().set()
-function dbSet(path, data) {
-  // 1. Mise à jour Optimiste locale (si applicable)
-  // (Déjà géré par les fonctions saveDish/generateMenu qui mettent à jour les variables globales si besoin, 
-  // mais ici on s'assure surtout que l'UI ne bloque pas)
-  
-  if (navigator.onLine && database) {
-    database.ref(path).set(data).catch(() => addToQueue('set', path, data));
-  } else {
-    addToQueue('set', path, data);
-  }
-}
-
-function dbRemove(path) {
-  if (navigator.onLine && database) {
-    database.ref(path).remove().catch(() => addToQueue('remove', path));
-  } else {
-    addToQueue('remove', path);
-  }
-}
-
-// ==========================================
-// 4. HELPERS UI
+// 3. FONCTIONS UTILITAIRES (Helpers)
 // ==========================================
 
 window.getDishIcon = function(name) {
@@ -208,34 +100,23 @@ window.getRecentlyUsedDishes = function() {
   return used;
 };
 
+// ==========================================
+// 4. FONCTIONS UI & NAVIGATION
+// ==========================================
+
 window.showToast = function(msg) {
   const t = document.getElementById('customToast');
   const m = document.getElementById('toastMessage');
   if(t && m) { m.innerHTML = msg; t.classList.remove('hidden'); t.classList.add('show'); setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.classList.add('hidden'), 300); }, 3000); }
 };
 
-// Update icône : check = Online/Sync, cloud_off = Offline/Queue
-window.updateSyncIcon = function(sync, offline = false) {
+window.updateSyncIcon = function(sync) {
   const i = document.getElementById('syncIndicator');
   const ic = document.getElementById('syncIcon');
   if(!i || !ic) return;
-  
-  if(sync) { 
-    i.classList.remove('hidden', 'error'); 
-    ic.textContent = 'sync'; // Tourne
-  } else if (offline || !navigator.onLine) {
-    i.classList.remove('hidden');
-    i.classList.add('error');
-    ic.textContent = 'cloud_off'; // Hors ligne / En attente
-  } else {
-    i.classList.remove('hidden', 'error');
-    ic.textContent = 'check_circle'; // Tout est bon
-  }
+  if(sync) { i.classList.remove('hidden', 'error'); ic.textContent = 'sync'; } 
+  else { i.classList.remove('hidden', 'error'); ic.textContent = 'check_circle'; }
 };
-
-// ==========================================
-// 5. NAVIGATION & MODALES
-// ==========================================
 
 window.switchToTab = function(tabName) {
   document.querySelectorAll('.tab-content').forEach(t => { t.classList.remove('active'); t.classList.add('hidden'); });
@@ -268,11 +149,13 @@ window.toggleMenuContent = function(id) {
   }
 };
 
+// --- Modales Recettes ---
 window.openAddDishModal = function() {
   editingDishId = null;
   document.getElementById('dishModalTitle').textContent = 'Nouveau plat';
   document.getElementById('saveDishBtn').textContent = 'Ajouter';
   document.getElementById('dishName').value = '';
+  
   newDishSeasons = [];
   window.generateModalSeasonChips();
   
@@ -282,6 +165,7 @@ window.openAddDishModal = function() {
   document.getElementById('mealLunch').checked = true;
   document.getElementById('mealDinner').checked = true;
   
+  // Gestion Cible Enfant
   const targetSection = document.getElementById('targetSection');
   if (targetSection) {
     if (menuConfig.childMode) {
@@ -289,7 +173,9 @@ window.openAddDishModal = function() {
         document.getElementById('targetChildLabel').textContent = menuConfig.childName || 'Enfant';
         document.getElementById('targetParents').checked = true;
         document.getElementById('targetChild').checked = true;
-    } else { targetSection.classList.add('hidden'); }
+    } else {
+        targetSection.classList.add('hidden');
+    }
   }
   
   const fb = document.getElementById('dishNameFeedback'); if(fb) fb.textContent='';
@@ -299,6 +185,7 @@ window.openAddDishModal = function() {
 };
 
 window.openEditDishModal = function(dishId) {
+  // SECURITE : Conversion ID en string
   const dish = dishes.find(d => String(d.id) === String(dishId));
   if (!dish) return;
 
@@ -327,19 +214,23 @@ window.openEditDishModal = function(dishId) {
         const targets = dish.target || ['parents', 'child'];
         document.getElementById('targetParents').checked = targets.includes('parents');
         document.getElementById('targetChild').checked = targets.includes('child');
-    } else { targetSection.classList.add('hidden'); }
+    } else {
+        targetSection.classList.add('hidden');
+    }
   }
   
   window.openModal('addDishModal');
 };
 
 // ==========================================
-// 6. ACTIONS (Modifiées pour Offline)
+// 5. LOGIQUE MÉTIER (ACTIONS)
 // ==========================================
 
 window.saveDish = function() {
   const name = document.getElementById('dishName').value.trim();
-  if (!name || newDishSeasons.length === 0) return window.showToast('❌ Nom et saison requis');
+  if (!name || newDishSeasons.length === 0) {
+    return window.showToast('❌ Nom et saison requis');
+  }
 
   const mealTypes = [];
   if (document.getElementById('mealLunch').checked) mealTypes.push('lunch');
@@ -365,28 +256,14 @@ window.saveDish = function() {
     grillades: document.getElementById('grillades').checked
   };
 
-  // 1. Mise à jour locale Optimiste
-  const idx = dishes.findIndex(d => String(d.id) === String(dish.id));
-  if (idx >= 0) dishes[idx] = dish; else dishes.push(dish);
-  window.renderDishes();
-  saveLocalData('dishes', dishes);
-
-  // 2. Envoi DB ou Queue
-  dbSet(`groups/${groupId}/dishes/${dish.id}`, dish);
-  
+  if(database) database.ref(`groups/${groupId}/dishes/${dish.id}`).set(dish);
   window.showToast('✅ Enregistré !');
   window.closeModal('addDishModal');
 };
 
 window.deleteDish = function(id) {
   if (confirm('Supprimer ce plat ?')) {
-    // 1. Optimiste
-    dishes = dishes.filter(d => String(d.id) !== String(id));
-    window.renderDishes();
-    saveLocalData('dishes', dishes);
-
-    // 2. DB ou Queue
-    dbRemove(`groups/${groupId}/dishes/${id}`);
+    if (database) database.ref(`groups/${groupId}/dishes/${id}`).remove();
     window.showToast('✅ Supprimé');
   }
 };
@@ -431,6 +308,8 @@ window.generateMenu = function(targetWeekNumber = null) {
 
   for (let i = 0; i < 7; i++) {
     const day = daysOfWeek[i];
+    
+    // Lunch
     let lunch = null;
     let lunchChild = null;
 
@@ -451,6 +330,7 @@ window.generateMenu = function(targetWeekNumber = null) {
       }
     }
 
+    // Dinner
     let dinner = null;
     let dinnerChild = null;
 
@@ -480,68 +360,102 @@ window.generateMenu = function(targetWeekNumber = null) {
   const weekDates = window.getWeekDates(weekNumber);
   const newMenu = { id: Date.now(), weekNumber, startDate: weekDates.monday, endDate: weekDates.sunday, schedule };
   
-  // Optimiste + DB
-  // On retire l'ancien menu s'il existe dans la liste locale pour cette semaine
-  menus = menus.filter(m => m.weekNumber !== weekNumber);
-  menus.push(newMenu);
-  menus.sort((a,b) => b.weekNumber - a.weekNumber);
-  window.renderMenus();
-  saveLocalData('menus', menus);
-  
-  dbSet(`groups/${groupId}/menus/${newMenu.id}`, newMenu);
+  if(database) database.ref(`groups/${groupId}/menus/${newMenu.id}`).set(newMenu);
   window.showToast('✅ Menu généré !');
   window.switchToTab('menus');
 };
 
 window.regenerateMenu = function(menuId, weekNumber) {
   if (confirm('Régénérer ?')) {
-    dbRemove(`groups/${groupId}/menus/${menuId}`);
+    if (database) database.ref(`groups/${groupId}/menus/${menuId}`).remove();
     window.generateMenu(weekNumber);
   }
 };
 
-// --- Config Setters ---
+window.toggleFilter = function(filter) {
+  if (activeFilters.includes(filter)) {
+    activeFilters = activeFilters.filter(f => f !== filter);
+    document.getElementById('filter_' + filter).classList.remove('active');
+  } else {
+    activeFilters.push(filter);
+    document.getElementById('filter_' + filter).classList.add('active');
+  }
+  window.renderDishes();
+};
+
 window.toggleChildMode = function() {
   menuConfig.childMode = document.getElementById('childModeToggle').checked;
-  window.updateConfigUI(); // Update visuel immédiat
-  saveLocalData('config', menuConfig);
-  dbSet(`groups/${groupId}/config`, menuConfig);
+  const div = document.getElementById('childConfigContent');
+  if(menuConfig.childMode) div.classList.remove('hidden'); else div.classList.add('hidden');
+  if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 };
 
 window.saveChildName = function() {
   menuConfig.childName = document.getElementById('childNameInput').value;
-  saveLocalData('config', menuConfig);
-  dbSet(`groups/${groupId}/config`, menuConfig);
+  if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 };
 
 window.toggleConfigSeason = function(season) {
   let list = menuConfig.activeSeasons || [];
   if (list.includes(season)) list = list.filter(s => s !== season); else list.push(season);
   menuConfig.activeSeasons = list;
-  window.updateConfigUI();
-  saveLocalData('config', menuConfig);
-  dbSet(`groups/${groupId}/config`, menuConfig);
+  if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 };
 
 window.toggleSportDay = function(day) {
   let list = menuConfig.sportDays || [];
   if (list.includes(day)) list = list.filter(d => d !== day); else list.push(day);
   menuConfig.sportDays = list;
-  window.updateConfigUI();
-  saveLocalData('config', menuConfig);
-  dbSet(`groups/${groupId}/config`, menuConfig);
+  if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 };
 
 window.setMealDuration = function(meal, duration) {
   menuConfig.mealDuration = menuConfig.mealDuration || { lunch: 1, dinner: 1 };
   menuConfig.mealDuration[meal] = duration;
-  window.updateConfigUI();
-  saveLocalData('config', menuConfig);
-  dbSet(`groups/${groupId}/config`, menuConfig);
+  if (database) database.ref(`groups/${groupId}/config`).set(menuConfig);
 };
 
 // ==========================================
-// 7. RENDU & UI
+// 6. GESTION GROUPE
+// ==========================================
+
+window.showGroupTypeSelection = function() {
+  document.getElementById('groupTypeSelection').classList.remove('hidden');
+  document.getElementById('joinGroupForm').classList.add('hidden');
+};
+window.showCreateGroup = function() {
+  const newGroupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  groupId = newGroupId;
+  localStorage.setItem('groupId', groupId);
+  window.showMainApp();
+  initFirebaseAndListen();
+};
+window.showJoinGroup = function() {
+  document.getElementById('groupTypeSelection').classList.add('hidden');
+  document.getElementById('joinGroupForm').classList.remove('hidden');
+};
+window.joinGroup = function() {
+  const v = document.getElementById('groupIdInput').value.trim();
+  if(v) { groupId=v; localStorage.setItem('groupId', groupId); window.showMainApp(); initFirebaseAndListen(); }
+  else window.showToast('❌ ID requis');
+};
+window.showMainApp = function() {
+  document.getElementById('groupSetup').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('tabBar').classList.remove('hidden');
+  document.getElementById('currentGroupIdDisplay').textContent = groupId;
+  window.switchToTab('dishes');
+};
+window.copyGroupId = function() {
+  if(navigator.clipboard) navigator.clipboard.writeText(groupId).then(() => window.showToast('📋 Copié !'));
+  else prompt('ID :', groupId);
+};
+window.leaveGroup = function() {
+  if(confirm('Quitter ?')) { localStorage.removeItem('groupId'); location.reload(); }
+};
+
+// ==========================================
+// 7. AFFICHAGE (RENDERS)
 // ==========================================
 
 window.renderDishes = function() {
@@ -558,6 +472,7 @@ window.renderDishes = function() {
     if (activeFilters.includes('vege') && !d.vegetarian) m = false;
     if (activeFilters.includes('summer') && !d.seasons.includes('Été')) m = false;
     if (activeFilters.includes('winter') && !d.seasons.includes('Hiver')) m = false;
+    
     if (activeFilters.includes('child')) {
        const targets = d.target || ['parents', 'child'];
        if (!targets.includes('child')) m = false;
@@ -646,24 +561,41 @@ window.renderMenus = function() {
         let lunchName = day.lunch ? day.lunch.name : '-';
         let lunchDisplay = `<div class="meal-name">${lunchName}</div>`;
         
-        if (menuConfig.childMode || day.lunchChild) {
+        // Affichage forcé si mode enfant actif
+        if (menuConfig.childMode) {
+           // On affiche toujours l'encart enfant si le mode est actif
+           // Si le plat enfant est défini spécifiquement, on l'utilise.
+           // Sinon, on affiche le plat parent (en supposant qu'il convient).
            let childName = day.lunchChild ? day.lunchChild.name : lunchName;
            lunchDisplay = `
             <div class="meal-split">
                <div class="meal-name">${lunchName}</div>
                <div class="child-meal"><span class="material-icons">child_care</span> ${childName}</div>
             </div>`;
+        } else if (day.lunchChild) {
+           // Mode enfant désactivé MAIS un plat enfant existe dans la data (ancien menu)
+           lunchDisplay = `
+            <div class="meal-split">
+               <div class="meal-name">${lunchName}</div>
+               <div class="child-meal"><span class="material-icons">child_care</span> ${day.lunchChild.name}</div>
+            </div>`;
         }
 
         let dinnerName = day.dinner ? day.dinner.name : '-';
         let dinnerDisplay = `<div class="meal-name">${dinnerName}</div>`;
 
-        if (menuConfig.childMode || day.dinnerChild) {
+        if (menuConfig.childMode) {
            let childName = day.dinnerChild ? day.dinnerChild.name : dinnerName;
            dinnerDisplay = `
             <div class="meal-split">
                <div class="meal-name">${dinnerName}</div>
                <div class="child-meal"><span class="material-icons">child_care</span> ${childName}</div>
+            </div>`;
+        } else if (day.dinnerChild) {
+           dinnerDisplay = `
+            <div class="meal-split">
+               <div class="meal-name">${dinnerName}</div>
+               <div class="child-meal"><span class="material-icons">child_care</span> ${day.dinnerChild.name}</div>
             </div>`;
         }
 
@@ -781,19 +713,8 @@ window.updateConfigUI = function() {
   }
 };
 
-window.toggleFilter = function(filter) {
-  if (activeFilters.includes(filter)) {
-    activeFilters = activeFilters.filter(f => f !== filter);
-    document.getElementById('filter_' + filter).classList.remove('active');
-  } else {
-    activeFilters.push(filter);
-    document.getElementById('filter_' + filter).classList.add('active');
-  }
-  window.renderDishes();
-};
-
 // ==========================================
-// 8. SYNC FIREBASE (DOWNSTREAM)
+// 8. INITIALISATION & LISTENERS
 // ==========================================
 
 function initFirebaseAndListen() {
@@ -806,16 +727,17 @@ function initFirebaseAndListen() {
 
   if (groupId) {
     database.ref().off();
+    // Utilisation de Object.entries pour sécuriser les IDs
     database.ref(`groups/${groupId}/dishes`).on('value', s => {
       const d = s.val();
-      dishes = d ? Object.values(d).map(v => ({...v, id: v.id || v.name})) : [];
-      // Sauvegarde Cache
-      saveLocalData('dishes', dishes);
+      dishes = d ? Object.entries(d).map(([key, value]) => ({...value, id: key})) : [];
       window.renderDishes();
     });
     database.ref(`groups/${groupId}/menus`).on('value', s => {
       const d = s.val();
-      if (!d) { menus = []; } else {
+      if (!d) {
+         menus = [];
+      } else {
          const all = Object.entries(d).map(([k, v]) => ({...v, id: k}));
          const unique = {};
          all.forEach(m => { 
@@ -824,8 +746,6 @@ function initFirebaseAndListen() {
          });
          menus = Object.values(unique).sort((a,b) => b.weekNumber - a.weekNumber);
       }
-      // Sauvegarde Cache
-      saveLocalData('menus', menus);
       window.renderMenus();
       updateWidgetData();
     });
@@ -833,8 +753,6 @@ function initFirebaseAndListen() {
       const d = s.val();
       const def = { sportDays: [], activeSeasons: seasons, mealDuration: { lunch: 1, dinner: 1 }, childMode: false, childName: 'Enfant' };
       menuConfig = d ? { ...def, ...d } : def;
-      // Sauvegarde Cache
-      saveLocalData('config', menuConfig);
       if(!document.getElementById('configTab').classList.contains('hidden')) {
          window.generateConfigChips();
          window.updateConfigUI();
@@ -842,45 +760,6 @@ function initFirebaseAndListen() {
     });
   }
 }
-
-// ==========================================
-// 9. GROUPE & INIT GLOBALE
-// ==========================================
-
-window.showGroupTypeSelection = function() {
-  document.getElementById('groupTypeSelection').classList.remove('hidden');
-  document.getElementById('joinGroupForm').classList.add('hidden');
-};
-window.showCreateGroup = function() {
-  const newGroupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  groupId = newGroupId;
-  localStorage.setItem('groupId', groupId);
-  window.showMainApp();
-  initFirebaseAndListen();
-};
-window.showJoinGroup = function() {
-  document.getElementById('groupTypeSelection').classList.add('hidden');
-  document.getElementById('joinGroupForm').classList.remove('hidden');
-};
-window.joinGroup = function() {
-  const v = document.getElementById('groupIdInput').value.trim();
-  if(v) { groupId=v; localStorage.setItem('groupId', groupId); window.showMainApp(); initFirebaseAndListen(); }
-  else window.showToast('❌ ID requis');
-};
-window.showMainApp = function() {
-  document.getElementById('groupSetup').classList.add('hidden');
-  document.getElementById('mainApp').classList.remove('hidden');
-  document.getElementById('tabBar').classList.remove('hidden');
-  document.getElementById('currentGroupIdDisplay').textContent = groupId;
-  window.switchToTab('dishes');
-};
-window.copyGroupId = function() {
-  if(navigator.clipboard) navigator.clipboard.writeText(groupId).then(() => window.showToast('📋 Copié !'));
-  else prompt('ID :', groupId);
-};
-window.leaveGroup = function() {
-  if(confirm('Quitter ?')) { localStorage.removeItem('groupId'); location.reload(); }
-};
 
 function setupTooltip() {
   const syncIcon = document.getElementById('syncIcon');
@@ -898,28 +777,9 @@ window.installApp = function() {
   if(deferredPrompt) deferredPrompt.prompt(); 
 };
 
-// FONCTION DE CHARGEMENT INITIAL (OFFLINE)
-function updateWidgetData() {
-  if (!menus.length) return;
-  const currentWeek = getWeekNumber(new Date());
-  const currentMenu = menus.find(m => m.weekNumber === currentWeek);
-  if (!currentMenu) { localStorage.removeItem('menuGenerator_daily'); return; }
-  const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-  const todayName = days[new Date().getDay()];
-  const d = currentMenu.schedule.find(x => x.day === todayName);
-  if (d) {
-    let l = d.lunch?d.lunch.name:'-'; if(d.lunchChild && d.lunchChild.name !== l) l+=` / 👶 ${d.lunchChild.name}`;
-    let dn = d.dinner?d.dinner.name:'-'; if(d.dinnerChild && d.dinnerChild.name !== dn) dn+=` / 👶 ${d.dinnerChild.name}`;
-    localStorage.setItem('menuGenerator_daily', JSON.stringify({ lunch: l, dinner: dn, date: todayName }));
-  }
-}
-
 window.onload = function() {
-  console.log('App Started vOFFLINE');
+  console.log('App Started vFINAL-SAFE');
   setupPWA();
-  
-  // Charger les données locales d'abord
-  loadLocalData();
   
   const input = document.getElementById('dishName');
   if(input) {
