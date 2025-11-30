@@ -265,7 +265,7 @@ window.deleteDish = function(id) {
   }
 };
 
-// Sélection Intelligente
+// FONCTION DE SÉLECTION INTELLIGENTE
 function pickDish(available, usedMap, excludeId = null, mealTypeFilter = null, targetFilter = null) {
   let candidates = available.filter(d => 
     (!excludeId || d.id !== excludeId) && 
@@ -317,6 +317,7 @@ window.generateMenu = function(targetWeekNumber = null) {
       lunch = pickDish(availableDishes, usedInMenu, null, 'lunch', 'parents');
     }
 
+    // Gestion Enfant
     if (menuConfig.childMode && lunch) {
       const targets = lunch.target || ['parents', 'child'];
       if (!targets.includes('child')) {
@@ -325,6 +326,10 @@ window.generateMenu = function(targetWeekNumber = null) {
         } else {
           lunchChild = pickDish(availableDishes, usedInMenu, lunch.id, 'lunch', 'child');
         }
+      } else {
+         // Même plat : on le laisse à null dans l'objet de données pour économiser
+         // Mais l'affichage le gérera
+         lunchChild = null;
       }
     }
 
@@ -346,6 +351,8 @@ window.generateMenu = function(targetWeekNumber = null) {
         } else {
           dinnerChild = pickDish(availableDishes, usedInMenu, dinner.id, 'dinner', 'child');
         }
+      } else {
+         dinnerChild = null;
       }
     }
 
@@ -482,7 +489,6 @@ window.renderDishes = function() {
   empty?.classList.add('hidden'); list?.classList.remove('hidden');
 
   filtered.forEach(dish => {
-    // SECURITE BOUCLE : Try-Catch pour éviter qu'une seule recette plante tout
     try {
       const isLunch = !dish.mealType || dish.mealType.includes('lunch');
       const isDinner = !dish.mealType || dish.mealType.includes('dinner');
@@ -499,7 +505,6 @@ window.renderDishes = function() {
       }
 
       const iconName = window.getDishIcon(dish.name);
-      // SECURITE ID
       const safeId = String(dish.id).replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
       const div = document.createElement('div');
@@ -534,9 +539,7 @@ window.renderDishes = function() {
           </button>
         </div>`;
       container.appendChild(div);
-    } catch (err) {
-      console.error("Erreur affichage recette:", dish, err);
-    }
+    } catch (err) { console.error(err); }
   });
 };
 
@@ -555,13 +558,32 @@ window.renderMenus = function() {
       let scheduleHTML = '';
       
       menu.schedule.forEach(day => {
-        let lunchDisplay = `<div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div>`;
-        if (day.lunchChild) {
-          lunchDisplay = `<div class="meal-split"><div class="meal-name">${day.lunch ? day.lunch.name : '-'}</div><div class="child-meal"><span class="material-icons">child_care</span> ${day.lunchChild.name}</div></div>`;
+        // Déjeuner
+        let lunchName = day.lunch ? day.lunch.name : '-';
+        let lunchDisplay = `<div class="meal-name">${lunchName}</div>`;
+        
+        // Si Mode Enfant activé (Config Globale) OU s'il y a un plat spécifique différent
+        if (menuConfig.childMode || day.lunchChild) {
+           // Nom du plat enfant (Spécifique ou identique au parent par défaut)
+           let childName = day.lunchChild ? day.lunchChild.name : lunchName;
+           lunchDisplay = `
+            <div class="meal-split">
+               <div class="meal-name">${lunchName}</div>
+               <div class="child-meal"><span class="material-icons">child_care</span> ${childName}</div>
+            </div>`;
         }
-        let dinnerDisplay = `<div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div>`;
-        if (day.dinnerChild) {
-          dinnerDisplay = `<div class="meal-split"><div class="meal-name">${day.dinner ? day.dinner.name : '-'}</div><div class="child-meal"><span class="material-icons">child_care</span> ${day.dinnerChild.name}</div></div>`;
+
+        // Dîner
+        let dinnerName = day.dinner ? day.dinner.name : '-';
+        let dinnerDisplay = `<div class="meal-name">${dinnerName}</div>`;
+
+        if (menuConfig.childMode || day.dinnerChild) {
+           let childName = day.dinnerChild ? day.dinnerChild.name : dinnerName;
+           dinnerDisplay = `
+            <div class="meal-split">
+               <div class="meal-name">${dinnerName}</div>
+               <div class="child-meal"><span class="material-icons">child_care</span> ${childName}</div>
+            </div>`;
         }
 
         scheduleHTML += `
@@ -742,7 +764,7 @@ window.installApp = function() {
 };
 
 window.onload = function() {
-  console.log('App Started vFINAL-SAFE');
+  console.log('App Started vFINAL-CHILD-FIX');
   setupPWA();
   
   const input = document.getElementById('dishName');
