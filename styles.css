@@ -380,3 +380,37 @@ details[open] summary .arrow { transform: rotate(180deg); }
 .card-title .icon-btn .material-icons {
   font-size: 20px; /* Ajuste la taille de l'icône */
 }
+
+/* SWITCH (Toggle M3) */
+.switch { position: relative; display: inline-block; width: 40px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--md-primary); }
+input:checked + .slider:before { transform: translateX(16px); }
+
+/* TAGS CIBLES */
+.tag-target-child { background: #FFD8E4; color: #31111D; } /* Rose enfant */
+.tag-target-parents { background: #E7E0EC; color: #1D192B; } /* Gris parents */
+.tag-target-all { background: #C4EED0; color: #07210F; display: none; } /* On cache si c'est pour tout le monde pour alléger */
+
+/* MENU SPLIT (Repas différent enfant) */
+.meal-split {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.child-meal {
+  font-size: 13px;
+  color: var(--md-primary);
+  background: rgba(0, 163, 129, 0.08);
+  padding: 4px 8px;
+  border-radius: 8px;
+  width: fit-content;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.child-meal .material-icons { font-size: 14px; }
+
