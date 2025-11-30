@@ -414,3 +414,22 @@ input:checked + .slider:before { transform: translateX(16px); }
 }
 .child-meal .material-icons { font-size: 14px; }
 
+/* --- TAGS CIBLES (Mode Enfant) --- */
+.tag-target-child { 
+  background: #FFD8E4; 
+  color: #31111D; 
+} 
+
+.tag-target-parents { 
+  background: #E7E0EC; 
+  color: #1D192B; 
+}
+
+/* Style pour le filtre actif "Enfant" (Optionnel, pour le différencier) */
+#filter_child.active {
+  background: #FFD8E4;
+  color: #31111D;
+  border-color: transparent;
+}
+
+
