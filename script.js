@@ -204,6 +204,7 @@ window.openEditDishModal = function(dishId) {
   document.getElementById('mealLunch').checked = isLunch;
   document.getElementById('mealDinner').checked = isDinner;
   
+  // Cibles
   const targetSection = document.getElementById('targetSection');
   if (targetSection) {
     if (menuConfig.childMode) {
@@ -266,6 +267,7 @@ window.deleteDish = function(id) {
   }
 };
 
+// SÉLECTION INTELLIGENTE
 function pickDish(available, usedMap, excludeId = null, mealTypeFilter = null, targetFilter = null) {
   let candidates = available.filter(d => 
     (!excludeId || d.id !== excludeId) && 
@@ -471,12 +473,10 @@ window.renderDishes = function() {
     if (activeFilters.includes('summer') && !d.seasons.includes('Été')) m = false;
     if (activeFilters.includes('winter') && !d.seasons.includes('Hiver')) m = false;
     
-    // Filtre "Enfant" (Nouveau)
     if (activeFilters.includes('child')) {
        const targets = d.target || ['parents', 'child'];
        if (!targets.includes('child')) m = false;
     }
-    
     return m;
   });
   filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -561,37 +561,25 @@ window.renderMenus = function() {
         let lunchName = day.lunch ? day.lunch.name : '-';
         let lunchDisplay = `<div class="meal-name">${lunchName}</div>`;
         
-        // Affichage conditionnel
-        if (menuConfig.childMode) {
+        // Affichage forcé si mode enfant actif
+        if (menuConfig.childMode || day.lunchChild) {
            let childName = day.lunchChild ? day.lunchChild.name : lunchName;
            lunchDisplay = `
             <div class="meal-split">
                <div class="meal-name">${lunchName}</div>
                <div class="child-meal"><span class="material-icons">child_care</span> ${childName}</div>
             </div>`;
-        } else if (day.lunchChild) {
-           lunchDisplay = `
-            <div class="meal-split">
-               <div class="meal-name">${lunchName}</div>
-               <div class="child-meal"><span class="material-icons">child_care</span> ${day.lunchChild.name}</div>
-            </div>`;
         }
 
         let dinnerName = day.dinner ? day.dinner.name : '-';
         let dinnerDisplay = `<div class="meal-name">${dinnerName}</div>`;
 
-        if (menuConfig.childMode) {
+        if (menuConfig.childMode || day.dinnerChild) {
            let childName = day.dinnerChild ? day.dinnerChild.name : dinnerName;
            dinnerDisplay = `
             <div class="meal-split">
                <div class="meal-name">${dinnerName}</div>
                <div class="child-meal"><span class="material-icons">child_care</span> ${childName}</div>
-            </div>`;
-        } else if (day.dinnerChild) {
-           dinnerDisplay = `
-            <div class="meal-split">
-               <div class="meal-name">${dinnerName}</div>
-               <div class="child-meal"><span class="material-icons">child_care</span> ${day.dinnerChild.name}</div>
             </div>`;
         }
 
